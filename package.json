@@ -1,0 +1,57 @@
+{
+  "name": "dsh-obsidian-bridge-lifecycle",
+  "version": "0.1.1",
+  "description": "Cordis lifecycle controller for the external Obsidian DeepHarness Bridge.",
+  "type": "module",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
+    "./client": { "types": "./lib/types/client.d.ts", "default": "./lib/client.js" },
+    "./api": { "types": "./lib/types/api.d.ts", "default": "./lib/api.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["lib", "README.md", "LICENSE"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node -e \"fs.rmSync('lib',{recursive:true,force:true})\" && tsc -p tsconfig.build.json && tsdown --config-loader unrun --config tsdown.config.ts",
+    "prepack": "pnpm build",
+    "pretest": "pnpm build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm test && pnpm pack --dry-run --json"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/schemastery": "*",
+    "dsh-obsidian-bridge-protocol": "*"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": { "optional": true },
+    "@deepseek-ai/schemastery": { "optional": true },
+    "dsh-obsidian-bridge-protocol": { "optional": true }
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.1",
+    "@deepseek-ai/schemastery": "3.18.2",
+    "@types/node": "^24.3.0",
+    "dsh-obsidian-bridge-protocol": "link:../dsh-obsidian-bridge-protocol",
+    "tsdown": "^0.22.14",
+    "typescript": "^5.9.3",
+    "unrun": "^0.3.1",
+    "vitest": "^4.1.11"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web"
+    }
+  },
+  "dshKnowledge": { "bridgeLifecycleProtocolVersion": 1 },
+  "packageManager": "pnpm@11.19.0",
+  "publishConfig": { "access": "public" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/linmu115/dsh-obsidian-bridge-lifecycle.git"
+  }
+}
