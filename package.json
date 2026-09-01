@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge-lifecycle",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Cordis lifecycle controller for the external Obsidian DeepHarness Bridge.",
   "type": "module",
   "license": "MIT",
@@ -47,7 +47,7 @@
       "platform": "web"
     }
   },
-  "dshKnowledge": { "bridgeLifecycleProtocolVersion": 1 },
+  "dshKnowledge": { "bridgeLifecycleProtocolVersion": 2 },
   "packageManager": "pnpm@11.19.0",
   "publishConfig": { "access": "public" },
   "repository": {

@@ -19,6 +19,7 @@ export interface LifecycleRuntimeOptions {
   bridgeOrigin: string;
   clientId: string;
   role: "controller" | "surface";
+  browserOrigins?: readonly string[];
   requestOrigin?: string;
   pollIntervalMs?: number;
   leaseTtlMs?: number;
@@ -36,6 +37,7 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
   private readonly listeners = new Set<() => void>();
   private readonly pollIntervalMs: number;
   private readonly leaseTtlMs: number;
+  private readonly browserOrigins: readonly string[];
   private readonly now: () => number;
   private readonly setTimer: NonNullable<LifecycleRuntimeOptions["setTimer"]>;
   private readonly clearTimer: NonNullable<LifecycleRuntimeOptions["clearTimer"]>;
@@ -58,6 +60,7 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
     this.bridgeOrigin = this.control.origin;
     this.pollIntervalMs = options.pollIntervalMs ?? 1_000;
     this.leaseTtlMs = options.leaseTtlMs ?? 15_000;
+    this.browserOrigins = Object.freeze([...(options.browserOrigins ?? [])]);
     this.now = options.now ?? Date.now;
     this.setTimer = options.setTimer ?? setTimeout;
     this.clearTimer = options.clearTimer ?? clearTimeout;
@@ -125,8 +128,8 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
       };
       if (this.leaseExpiresAt <= this.now() + this.leaseTtlMs / 2) {
         const lease = this.leaseExpiresAt === 0
-          ? await this.control.acquireLease(this.leaseTtlMs)
-          : await this.control.renewLease(this.leaseTtlMs);
+          ? await this.control.acquireLease(this.leaseTtlMs, this.browserOrigins)
+          : await this.control.renewLease(this.leaseTtlMs, this.browserOrigins);
         this.leaseExpiresAt = lease.expiresAt;
       }
       await this.observe(status);

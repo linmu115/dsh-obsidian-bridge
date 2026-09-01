@@ -8,7 +8,37 @@ export * from "./api.ts";
 export { BridgeLifecycleRuntime } from "./runtime.ts";
 
 export const name = "dsh-obsidian-bridge-lifecycle";
-export const inject = [] as const;
+export const inject = ["webServer"] as const;
+
+interface WebServerBinding {
+  readonly host: "127.0.0.1" | "0.0.0.0";
+  readonly port: number;
+}
+
+export function browserOriginFromWebServer(server: WebServerBinding): string {
+  if (!Number.isInteger(server.port) || server.port < 1 || server.port > 65_535) {
+    throw new Error("DSH Web server has not published its listening port");
+  }
+  const browserHost = server.host === "0.0.0.0" ? "127.0.0.1" : server.host;
+  return `http://${browserHost}:${server.port}`;
+}
+
+export async function waitForBrowserOrigin(
+  server: WebServerBinding,
+  timeoutMs = 10_000,
+  now: () => number = Date.now,
+  wait: (delayMs: number) => Promise<void> = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs)),
+): Promise<string> {
+  const deadline = now() + timeoutMs;
+  while (true) {
+    try {
+      return browserOriginFromWebServer(server);
+    } catch (error) {
+      if (now() >= deadline) throw error;
+      await wait(25);
+    }
+  }
+}
 
 export interface Config { bridgeOrigin: string; }
 export const Config = s.object({
@@ -20,10 +50,12 @@ class BridgeLifecycleService extends Service implements ObsidianBridgeLifecycle 
 
   constructor(ctx: Context, config: Config) {
     super(ctx, "obsidianBridgeLifecycle");
+    const browserOrigin = browserOriginFromWebServer((ctx as Context & { webServer: WebServerBinding }).webServer);
     this.runtime = new BridgeLifecycleRuntime({
       bridgeOrigin: config.bridgeOrigin,
       clientId: "dsh-host-controller",
       role: "controller",
+      browserOrigins: [browserOrigin],
       onError: (error) => console.warn("[dsh-obsidian-bridge-lifecycle] Bridge unavailable", error),
     });
     this.runtime.start();
@@ -39,5 +71,9 @@ class BridgeLifecycleService extends Service implements ObsidianBridgeLifecycle 
 }
 
 export function apply(ctx: Context, config: Config): void {
-  new BridgeLifecycleService(ctx, config);
+  ctx.inject(inject, async (injected) => {
+    const server = (injected as Context & { webServer: WebServerBinding }).webServer;
+    await waitForBrowserOrigin(server);
+    new BridgeLifecycleService(injected, config);
+  });
 }
