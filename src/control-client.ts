@@ -22,8 +22,8 @@ export interface BridgeControlClientOptions {
 export interface BridgeControlClient {
   readonly origin: string;
   status(): Promise<BridgeStatus>;
-  acquireLease(ttlMs: number): Promise<BridgeLease>;
-  renewLease(ttlMs: number): Promise<BridgeLease>;
+  acquireLease(ttlMs: number, browserOrigins: readonly string[]): Promise<BridgeLease>;
+  renewLease(ttlMs: number, browserOrigins: readonly string[]): Promise<BridgeLease>;
   releaseLease(): Promise<void>;
   drain(reason: string, deadlineMs: number): Promise<BridgeStatus>;
   resume(): Promise<BridgeStatus>;
@@ -97,13 +97,14 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
   return {
     origin,
     status,
-    async acquireLease(ttlMs) {
+    async acquireLease(ttlMs, browserOrigins) {
       if (bootId === undefined) await status();
       if (bootId === undefined) throw new Error("Bridge boot identity is unavailable");
       const input = acquireBridgeLeaseRequestSchema.parse({
         lifecycleProtocolVersion: BRIDGE_LIFECYCLE_PROTOCOL_VERSION,
         expectedBootId: bootId,
         ttlMs,
+        browserOrigins: [...browserOrigins],
       });
       lease = bridgeLeaseSchema.parse(await request("/control/v1/leases", {
         method: "POST",
@@ -111,12 +112,13 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
       }));
       return lease;
     },
-    async renewLease(ttlMs) {
-      if (lease === undefined) return this.acquireLease(ttlMs);
+    async renewLease(ttlMs, browserOrigins) {
+      if (lease === undefined) return this.acquireLease(ttlMs, browserOrigins);
       const input = acquireBridgeLeaseRequestSchema.parse({
         lifecycleProtocolVersion: BRIDGE_LIFECYCLE_PROTOCOL_VERSION,
         expectedBootId: lease.bootId,
         ttlMs,
+        browserOrigins: [...browserOrigins],
       });
       lease = bridgeLeaseSchema.parse(await request(`/control/v1/leases/${encodeURIComponent(lease.leaseId)}`, {
         method: "PUT",

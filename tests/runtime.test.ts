@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { BRIDGE_LIFECYCLE_PROTOCOL_VERSION } from "dsh-obsidian-bridge-protocol";
+import { browserOriginFromWebServer, waitForBrowserOrigin } from "../src/index.ts";
 import { BridgeLifecycleRuntime } from "../src/runtime.ts";
 
 const ready = {
@@ -23,7 +24,7 @@ describe("BridgeLifecycleRuntime", () => {
   it("mounts in registration order and unmounts in strict reverse order", async () => {
     const calls: string[] = [];
     let statusCall = 0;
-    const fetch = vi.fn(async (input: string | URL | Request) => {
+    const fetch = vi.fn(async (input: string | URL | Request, _init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith("/control/v1/status")) {
         statusCall += 1;
@@ -44,6 +45,7 @@ describe("BridgeLifecycleRuntime", () => {
         bootId: ready.bootId,
         acquiredAt: 1,
         expiresAt: 100_000,
+        browserOrigins: ["http://127.0.0.1:23686"],
       });
       throw new Error(`unexpected request ${url}`);
     });
@@ -52,6 +54,7 @@ describe("BridgeLifecycleRuntime", () => {
       bridgeOrigin: "http://127.0.0.1:18473",
       clientId: "test",
       role: "controller",
+      browserOrigins: ["http://127.0.0.1:23686"],
       fetch: fetch as typeof globalThis.fetch,
       now: () => 10,
       setTimer: (callback) => { scheduled.push(callback); return 1 as unknown as ReturnType<typeof setTimeout>; },
@@ -64,5 +67,25 @@ describe("BridgeLifecycleRuntime", () => {
     scheduled.shift()?.();
     await vi.waitFor(() => expect(calls).toEqual(["mount-a", "mount-b", "dispose-b", "dispose-a"]));
     await runtime.dispose();
+    const leaseCall = fetch.mock.calls.find(([input]) => String(input).endsWith("/control/v1/leases"));
+    expect(JSON.parse(String(leaseCall?.[1]?.body))).toMatchObject({
+      browserOrigins: ["http://127.0.0.1:23686"],
+    });
+  });
+
+  it("derives the exact OS-assigned browser origin from the initialized Web server", () => {
+    expect(browserOriginFromWebServer({ host: "127.0.0.1", port: 23686 })).toBe("http://127.0.0.1:23686");
+    expect(browserOriginFromWebServer({ host: "0.0.0.0", port: 23686 })).toBe("http://127.0.0.1:23686");
+    expect(() => browserOriginFromWebServer({ host: "127.0.0.1", port: 0 })).toThrow(/listening port/);
+  });
+
+  it("waits until a --port 0 Web server publishes its OS-assigned port", async () => {
+    const server = { host: "127.0.0.1" as const, port: 0 };
+    let timestamp = 0;
+    const origin = waitForBrowserOrigin(server, 100, () => timestamp, async (delay) => {
+      timestamp += delay;
+      server.port = 23686;
+    });
+    await expect(origin).resolves.toBe("http://127.0.0.1:23686");
   });
 });
