@@ -22,8 +22,8 @@ export interface BridgeControlClientOptions {
 export interface BridgeControlClient {
   readonly origin: string;
   status(): Promise<BridgeStatus>;
-  acquireLease(ttlMs: number, browserOrigins: readonly string[]): Promise<BridgeLease>;
-  renewLease(ttlMs: number, browserOrigins: readonly string[]): Promise<BridgeLease>;
+  acquireLease(ttlMs: number, browserOrigins: readonly string[], dshViewerUrl?: string): Promise<BridgeLease>;
+  renewLease(ttlMs: number, browserOrigins: readonly string[], dshViewerUrl?: string): Promise<BridgeLease>;
   releaseLease(): Promise<void>;
   drain(reason: string, deadlineMs: number): Promise<BridgeStatus>;
   resume(): Promise<BridgeStatus>;
@@ -97,7 +97,7 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
   return {
     origin,
     status,
-    async acquireLease(ttlMs, browserOrigins) {
+    async acquireLease(ttlMs, browserOrigins, dshViewerUrl) {
       if (bootId === undefined) await status();
       if (bootId === undefined) throw new Error("Bridge boot identity is unavailable");
       const input = acquireBridgeLeaseRequestSchema.parse({
@@ -105,6 +105,7 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
         expectedBootId: bootId,
         ttlMs,
         browserOrigins: [...browserOrigins],
+        ...(dshViewerUrl === undefined ? {} : { dshViewerUrl }),
       });
       lease = bridgeLeaseSchema.parse(await request("/control/v1/leases", {
         method: "POST",
@@ -112,13 +113,14 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
       }));
       return lease;
     },
-    async renewLease(ttlMs, browserOrigins) {
-      if (lease === undefined) return this.acquireLease(ttlMs, browserOrigins);
+    async renewLease(ttlMs, browserOrigins, dshViewerUrl) {
+      if (lease === undefined) return this.acquireLease(ttlMs, browserOrigins, dshViewerUrl);
       const input = acquireBridgeLeaseRequestSchema.parse({
         lifecycleProtocolVersion: BRIDGE_LIFECYCLE_PROTOCOL_VERSION,
         expectedBootId: lease.bootId,
         ttlMs,
         browserOrigins: [...browserOrigins],
+        ...(dshViewerUrl === undefined ? {} : { dshViewerUrl }),
       });
       lease = bridgeLeaseSchema.parse(await request(`/control/v1/leases/${encodeURIComponent(lease.leaseId)}`, {
         method: "PUT",

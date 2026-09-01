@@ -8,11 +8,15 @@ export * from "./api.ts";
 export { BridgeLifecycleRuntime } from "./runtime.ts";
 
 export const name = "dsh-obsidian-bridge-lifecycle";
-export const inject = ["webServer"] as const;
+export const inject = ["webServer", "connection"] as const;
 
 interface WebServerBinding {
   readonly host: "127.0.0.1" | "0.0.0.0";
   readonly port: number;
+}
+
+interface ConnectionBinding {
+  authenticatedUrl(baseUrl: string): string;
 }
 
 export function browserOriginFromWebServer(server: WebServerBinding): string {
@@ -51,11 +55,13 @@ class BridgeLifecycleService extends Service implements ObsidianBridgeLifecycle 
   constructor(ctx: Context, config: Config) {
     super(ctx, "obsidianBridgeLifecycle");
     const browserOrigin = browserOriginFromWebServer((ctx as Context & { webServer: WebServerBinding }).webServer);
+    const dshViewerUrl = (ctx as Context & { connection: ConnectionBinding }).connection.authenticatedUrl(browserOrigin);
     this.runtime = new BridgeLifecycleRuntime({
       bridgeOrigin: config.bridgeOrigin,
       clientId: "dsh-host-controller",
       role: "controller",
       browserOrigins: [browserOrigin],
+      dshViewerUrl,
       onError: (error) => console.warn("[dsh-obsidian-bridge-lifecycle] Bridge unavailable", error),
     });
     this.runtime.start();
