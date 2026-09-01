@@ -46,6 +46,7 @@ describe("BridgeLifecycleRuntime", () => {
         acquiredAt: 1,
         expiresAt: 100_000,
         browserOrigins: ["http://127.0.0.1:23686"],
+        dshViewerUrl: "http://127.0.0.1:23686/?token=current",
       });
       throw new Error(`unexpected request ${url}`);
     });
@@ -55,6 +56,7 @@ describe("BridgeLifecycleRuntime", () => {
       clientId: "test",
       role: "controller",
       browserOrigins: ["http://127.0.0.1:23686"],
+      dshViewerUrl: "http://127.0.0.1:23686/?token=current",
       fetch: fetch as typeof globalThis.fetch,
       now: () => 10,
       setTimer: (callback) => { scheduled.push(callback); return 1 as unknown as ReturnType<typeof setTimeout>; },
@@ -70,6 +72,7 @@ describe("BridgeLifecycleRuntime", () => {
     const leaseCall = fetch.mock.calls.find(([input]) => String(input).endsWith("/control/v1/leases"));
     expect(JSON.parse(String(leaseCall?.[1]?.body))).toMatchObject({
       browserOrigins: ["http://127.0.0.1:23686"],
+      dshViewerUrl: "http://127.0.0.1:23686/?token=current",
     });
   });
 
