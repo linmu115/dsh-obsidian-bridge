@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge-lifecycle",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Cordis lifecycle controller for the external Obsidian DeepHarness Bridge.",
   "type": "module",
   "license": "MIT",
@@ -12,7 +12,7 @@
     "./api": { "types": "./lib/types/api.d.ts", "default": "./lib/api.js" },
     "./package.json": "./package.json"
   },
-  "files": ["lib", "README.md", "LICENSE"],
+  "files": ["lib", "CHANGELOG.md", "README.md", "LICENSE"],
   "engines": { "node": ">=20" },
   "scripts": {
     "build": "node -e \"fs.rmSync('lib',{recursive:true,force:true})\" && tsc -p tsconfig.build.json && tsdown --config-loader unrun --config tsdown.config.ts",
@@ -33,7 +33,7 @@
     "dsh-obsidian-bridge-protocol": { "optional": true }
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "4.0.1",
+    "@deepseek-ai/cordis": "4.0.2",
     "@deepseek-ai/schemastery": "3.18.2",
     "@types/node": "^24.3.0",
     "dsh-obsidian-bridge-protocol": "link:../dsh-obsidian-bridge-protocol",
