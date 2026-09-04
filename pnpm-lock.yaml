@@ -1,7 +1,7 @@
 lockfileVersion: '9.0'
 
 settings:
-  autoInstallPeers: true
+  autoInstallPeers: false
   excludeLinksFromLockfile: false
 
 importers:
@@ -18,8 +18,8 @@ importers:
         specifier: ^24.3.0
         version: 24.13.3
       dsh-obsidian-bridge-protocol:
-        specifier: link:../dsh-obsidian-bridge-protocol
-        version: link:../dsh-obsidian-bridge-protocol
+        specifier: git+https://github.com/linmu115/dsh-obsidian-bridge-protocol.git#cfb069a5a09dacfb2e4f64a26036dfe514225132
+        version: https://codeload.github.com/linmu115/dsh-obsidian-bridge-protocol/tar.gz/cfb069a5a09dacfb2e4f64a26036dfe514225132
       tsdown:
         specifier: ^0.22.14
         version: 0.22.14(typescript@5.9.3)(unrun@0.3.1)
@@ -31,7 +31,7 @@ importers:
         version: 0.3.1
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3))
+        version: 4.1.11(@types/node@24.13.3)
 
 packages:
 
@@ -366,6 +366,10 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
+  dsh-obsidian-bridge-protocol@https://codeload.github.com/linmu115/dsh-obsidian-bridge-protocol/tar.gz/cfb069a5a09dacfb2e4f64a26036dfe514225132:
+    resolution: {gitHosted: true, integrity: sha512-iTTDm4/F8hLFxlU2P5KeT5iddfAn+f+OfrHHgStFGZgijJmho1OQ62Nq2P1/Z25rSqRv7hCWeW7xoUvZYwpq+A==, tarball: https://codeload.github.com/linmu115/dsh-obsidian-bridge-protocol/tar.gz/cfb069a5a09dacfb2e4f64a26036dfe514225132}
+    version: 0.3.1
+
   dts-resolver@3.0.0:
     resolution: {integrity: sha512-1T1f+z+4tl9XD+m+0HBgWoL/nm0bOIffyWaUuUSBlFg/86IWvfx+wjNaO/ybU0AJzG9/Mi5hBUgGV6zCmWEN7Q==}
     engines: {node: ^22.18.0 || >=24.0.0}
@@ -694,7 +698,6 @@ packages:
       '@vitest/ui': 4.1.11
       happy-dom: '*'
       jsdom: '*'
-      vite: ^6.0.0 || ^7.0.0 || ^8.0.0
     peerDependenciesMeta:
       '@edge-runtime/vm':
         optional: true
@@ -732,6 +735,9 @@ packages:
 
   yuku-parser@0.8.7:
     resolution: {integrity: sha512-vRD9nwt4L3aYpxNqeSC4WqLv58xrXef0Ong1Mc45CTXTIpvLafx7JO05sczmQZwdLEZvywrLOGdNC5+Rp5N1BQ==}
+
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
 
@@ -946,6 +952,10 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
+  dsh-obsidian-bridge-protocol@https://codeload.github.com/linmu115/dsh-obsidian-bridge-protocol/tar.gz/cfb069a5a09dacfb2e4f64a26036dfe514225132:
+    dependencies:
+      zod: 4.4.3
+
   dts-resolver@3.0.0: {}
 
   empathic@2.0.1: {}
@@ -1154,7 +1164,7 @@ snapshots:
       '@types/node': 24.13.3
       fsevents: 2.3.3
 
-  vitest@4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)):
+  vitest@4.1.11(@types/node@24.13.3):
     dependencies:
       '@vitest/expect': 4.1.11
       '@vitest/mocker': 4.1.11(vite@8.2.2(@types/node@24.13.3))
@@ -1179,7 +1189,18 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.13.3
     transitivePeerDependencies:
+      - '@vitejs/devtools'
+      - esbuild
+      - jiti
+      - less
       - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
 
   why-is-node-running@2.3.0:
     dependencies:
@@ -1224,3 +1245,5 @@ snapshots:
       '@yuku-parser/binding-linux-x64-musl': 0.8.7
       '@yuku-parser/binding-win32-arm64': 0.8.7
       '@yuku-parser/binding-win32-x64': 0.8.7
+
+  zod@4.4.3: {}

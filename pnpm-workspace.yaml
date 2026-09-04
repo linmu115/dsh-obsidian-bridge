@@ -1,0 +1,9 @@
+packages:
+  - .
+
+autoInstallPeers: false
+strictPeerDependencies: false
+
+allowBuilds:
+  'dsh-obsidian-bridge-protocol@git+https://github.com/linmu115/dsh-obsidian-bridge-protocol.git': true
+  esbuild: true

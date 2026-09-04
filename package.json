@@ -36,7 +36,7 @@
     "@deepseek-ai/cordis": "4.0.2",
     "@deepseek-ai/schemastery": "3.18.2",
     "@types/node": "^24.3.0",
-    "dsh-obsidian-bridge-protocol": "link:../dsh-obsidian-bridge-protocol",
+    "dsh-obsidian-bridge-protocol": "git+https://github.com/linmu115/dsh-obsidian-bridge-protocol.git#cfb069a5a09dacfb2e4f64a26036dfe514225132",
     "tsdown": "^0.22.14",
     "typescript": "^5.9.3",
     "unrun": "^0.3.1",
