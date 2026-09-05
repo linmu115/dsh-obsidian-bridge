@@ -1,10 +1,11 @@
 import type { UserConfig } from "tsdown";
 
-const protocol = ["dsh-obsidian-bridge-protocol"];
+const protocol = ["dsh-obsidian-bridge-protocol", "dsh-obsidian-bridge-protocol/data", "dsh-annotation-core/protocol", "zod"];
 
 export default [
+  { entry: { transport: "src/transport.ts" }, outDir: "lib", format: "esm", platform: "neutral", target: "es2023", fixedExtension: false, dts: false, clean: false, deps: { neverBundle: ["dsh-annotation-core/protocol", "dsh-obsidian-bridge-protocol/data", "zod"] } },
   {
-    entry: { index: "src/index.ts", api: "src/api.ts" },
+    entry: { index: "src/index.ts", api: "src/api.ts", typert: "src/typert.ts" },
     outDir: "lib",
     format: ["esm"],
     platform: "node",

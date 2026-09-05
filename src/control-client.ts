@@ -1,3 +1,4 @@
+import { createRequestScope } from "./request-scope.ts";
 import {
   BRIDGE_LIFECYCLE_PROTOCOL_VERSION,
   acquireBridgeLeaseRequestSchema,
@@ -17,6 +18,7 @@ export interface BridgeControlClientOptions {
   role: BridgeClientRole;
   fetch?: typeof globalThis.fetch;
   requestOrigin?: string;
+  requestTimeoutMs?: number;
 }
 
 export interface BridgeControlClient {
@@ -27,6 +29,7 @@ export interface BridgeControlClient {
   releaseLease(): Promise<void>;
   drain(reason: string, deadlineMs: number): Promise<BridgeStatus>;
   resume(): Promise<BridgeStatus>;
+  cancelPending(): void;
   dispose(): Promise<void>;
 }
 
@@ -35,29 +38,37 @@ export function normalizeBridgeOrigin(value: string): string {
   if (url.protocol !== "http:" || (url.hostname !== "127.0.0.1" && url.hostname !== "localhost")) {
     throw new TypeError("Obsidian Bridge origin must be loopback HTTP");
   }
-  url.pathname = "";
-  url.search = "";
-  url.hash = "";
+  if (url.pathname !== "/" || url.search || url.hash || url.username || url.password) {
+    throw new TypeError("Obsidian Bridge origin cannot contain credentials, a path, query or fragment");
+  }
   return url.origin;
 }
 
 export function createBridgeControlClient(options: BridgeControlClientOptions): BridgeControlClient {
   const origin = normalizeBridgeOrigin(options.origin);
   const fetchImpl = options.fetch ?? globalThis.fetch;
+  const requests = createRequestScope(fetchImpl, options.requestTimeoutMs);
+  let disposed = false;
+  let requestGeneration = 0;
+  let disposing: Promise<void> | undefined;
   let token: string | undefined;
   let tokenExpiresAt = 0;
   let bootId: string | undefined;
   let lease: BridgeLease | undefined;
 
   const request = async (path: string, init: RequestInit = {}, authenticated = true): Promise<unknown> => {
+    const generation = requestGeneration;
+    if (disposed) throw new DOMException("Bridge client disposed", "AbortError");
     const headers = new Headers(init.headers);
     if (init.body !== undefined) headers.set("content-type", "application/json");
     if (options.requestOrigin) headers.set("origin", options.requestOrigin);
     if (authenticated) {
       if (token === undefined || tokenExpiresAt <= Date.now() + 1_000) await handshake();
+      if (disposed || generation !== requestGeneration) throw new DOMException("Bridge request cancelled", "AbortError");
       headers.set("authorization", `Bearer ${token}`);
     }
-    const response = await fetchImpl(`${origin}${path}`, { ...init, headers });
+    const response = await requests.request(`${origin}${path}`, { ...init, headers });
+    if (disposed || generation !== requestGeneration) throw new DOMException("Bridge request cancelled", "AbortError");
     const body = await response.json().catch(() => ({ error: response.statusText })) as unknown;
     if (!response.ok) {
       const message = typeof body === "object" && body !== null && "error" in body
@@ -79,6 +90,9 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
       }),
     }, false);
     const result = bridgeControlHandshakeResponseSchema.parse(raw);
+    if ((bootId !== undefined && result.bootId !== bootId) || result.clientId !== options.clientId || result.role !== options.role) {
+      throw new Error("Bridge control handshake identity changed");
+    }
     token = result.token;
     tokenExpiresAt = result.tokenExpiresAt;
     bootId = result.bootId;
@@ -160,9 +174,13 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
         body: JSON.stringify(input),
       }));
     },
-    async dispose() {
-      await this.releaseLease().catch(() => undefined);
-      token = undefined;
+    cancelPending() { requestGeneration += 1; requests.abort(); },
+    dispose() {
+      if (disposing !== undefined) return disposing;
+      requestGeneration += 1;
+      requests.abort();
+      disposing = this.releaseLease().catch(() => undefined).finally(() => { disposed = true; token = undefined; });
+      return disposing;
     },
   };
 }

@@ -6,13 +6,14 @@ import {
   type ObservedBridgeStatus,
 } from "dsh-obsidian-bridge-protocol";
 
-import type { BridgeAttachmentDisposer, BridgeAttachmentMount, ObsidianBridgeLifecycle, ReadyBridgeStatus } from "./api.ts";
+import type { BridgeHealthSource, BridgeLifecycleHealth, BridgeAttachmentDisposer, BridgeAttachmentMount, ObsidianBridgeLifecycle, ReadyBridgeStatus } from "./api.ts";
 import { createBridgeControlClient, type BridgeControlClient } from "./control-client.ts";
 
 interface Attachment {
   name: string;
   mount: BridgeAttachmentMount;
   disposer: BridgeAttachmentDisposer | undefined;
+  bootId?: string;
 }
 
 export interface LifecycleRuntimeOptions {
@@ -23,6 +24,7 @@ export interface LifecycleRuntimeOptions {
   dshViewerUrl?: string;
   requestOrigin?: string;
   pollIntervalMs?: number;
+  requestTimeoutMs?: number;
   leaseTtlMs?: number;
   fetch?: typeof globalThis.fetch;
   now?: () => number;
@@ -35,6 +37,8 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
   readonly bridgeOrigin: string;
   private readonly control: BridgeControlClient;
   private readonly attachments: Attachment[] = [];
+  private readonly healthSources = new Map<string, BridgeHealthSource>();
+  private readonly healthSubscriptions = new Map<string, () => void>();
   private readonly listeners = new Set<() => void>();
   private readonly pollIntervalMs: number;
   private readonly leaseTtlMs: number;
@@ -46,6 +50,10 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
   private readonly onError: (error: unknown) => void;
   private timer?: ReturnType<typeof setTimeout>;
   private stopped = false;
+  private started = false;
+  private generation = 0;
+  private inFlight?: Promise<void>;
+  private shutdown?: Promise<void>;
   private leaseExpiresAt = 0;
   private transition: Promise<void> = Promise.resolve();
   private lastKnownIdentity?: BridgeIdentity;
@@ -56,6 +64,7 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
       origin: options.bridgeOrigin,
       clientId: options.clientId,
       role: options.role,
+      ...(options.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: options.requestTimeoutMs }),
       ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
       ...(options.requestOrigin === undefined ? {} : { requestOrigin: options.requestOrigin }),
     });
@@ -83,9 +92,43 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
     return () => { this.listeners.delete(listener); };
   }
 
-  start(): void { void this.poll(); }
+  start(): void {
+    if (this.started || this.stopped) return;
+    this.started = true;
+    this.inFlight = this.poll();
+  }
+
+  getHealth(): BridgeLifecycleHealth {
+    return { state: this.snapshot.state, bridgeOrigin: this.bridgeOrigin,
+      components: Object.fromEntries([...this.healthSources].map(([name, source]) => [name, source.getHealth()])) };
+  }
+
+  registerHealthSource(name: string, source: BridgeHealthSource): () => void {
+    if (this.stopped) return () => undefined;
+    this.healthSubscriptions.get(name)?.();
+    this.healthSources.set(name, source);
+    const unsubscribe = source.subscribe?.(() => { for (const listener of [...this.listeners]) listener(); });
+    if (unsubscribe !== undefined) this.healthSubscriptions.set(name, unsubscribe);
+    return () => {
+      if (this.healthSources.get(name) !== source) return;
+      unsubscribe?.(); this.healthSources.delete(name); this.healthSubscriptions.delete(name);
+    };
+  }
+
+  retry(name?: string): void {
+    if (this.stopped) return;
+    if (name !== undefined) { if (!this.stopped) this.healthSources.get(name)?.retry?.(); return; }
+    for (const source of this.healthSources.values()) source.retry?.();
+    if (this.stopped) return;
+    if (this.timer !== undefined) this.clearTimer(this.timer);
+    this.inFlight = (this.inFlight ?? Promise.resolve()).then(() => {
+      if (this.timer !== undefined) this.clearTimer(this.timer);
+      return this.poll();
+    });
+  }
 
   mountWhenReady(name: string, mount: BridgeAttachmentMount): () => void {
+    if (this.stopped) return () => undefined;
     if (this.attachments.some((attachment) => attachment.name === name)) {
       throw new Error(`Bridge attachment ${JSON.stringify(name)} is already registered`);
     }
@@ -96,32 +139,58 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
       const index = this.attachments.indexOf(attachment);
       if (index >= 0) this.attachments.splice(index, 1);
       this.transition = this.transition.then(async () => {
-        await attachment.disposer?.();
+        const disposer = attachment.disposer;
         attachment.disposer = undefined;
-      });
+        await disposer?.();
+      }).catch(this.onError);
     };
   }
 
   async drain(reason: string, deadlineMs = 10_000): Promise<void> {
-    await this.observe(await this.control.drain(reason, deadlineMs));
+    if (this.stopped) return;
+    const generation = this.generation;
+    const status = await this.control.drain(reason, deadlineMs);
+    if (!this.stopped && generation === this.generation) await this.observe(status);
   }
 
   async resume(): Promise<void> {
-    await this.observe(await this.control.resume());
+    if (this.stopped) return;
+    const generation = this.generation;
+    const status = await this.control.resume();
+    if (!this.stopped && generation === this.generation) await this.observe(status);
   }
 
-  async dispose(): Promise<void> {
+  dispose(): Promise<void> {
+    if (this.shutdown !== undefined) return this.shutdown;
     this.stopped = true;
+    this.generation += 1;
     if (this.timer !== undefined) this.clearTimer(this.timer);
-    await this.unmountAll();
-    await this.control.dispose();
-    this.listeners.clear();
+    this.control.cancelPending();
+    this.snapshot = {
+      lifecycleProtocolVersion: BRIDGE_LIFECYCLE_PROTOCOL_VERSION, state: "OFFLINE",
+      stateChangedAt: this.now(), reason: "Bridge lifecycle stopped",
+    };
+    this.shutdown = (async () => {
+      await Promise.resolve();
+      for (const listener of [...this.listeners]) listener();
+      await this.inFlight;
+      await this.unmountAll();
+      await this.control.dispose();
+      this.listeners.clear();
+      for (const unsubscribe of this.healthSubscriptions.values()) unsubscribe();
+      this.healthSubscriptions.clear();
+      this.healthSources.clear();
+    })();
+    return this.shutdown;
   }
 
   private async poll(): Promise<void> {
     if (this.stopped) return;
+    const generation = this.generation;
     try {
       const status = await this.control.status();
+      if (this.stopped || generation !== this.generation) return;
+      if (this.lastKnownIdentity?.bootId !== status.bootId) this.leaseExpiresAt = 0;
       this.lastKnownIdentity = {
         lifecycleProtocolVersion: status.lifecycleProtocolVersion,
         instanceId: status.instanceId,
@@ -133,10 +202,13 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
         const lease = this.leaseExpiresAt === 0
           ? await this.control.acquireLease(this.leaseTtlMs, this.browserOrigins, this.dshViewerUrl)
           : await this.control.renewLease(this.leaseTtlMs, this.browserOrigins, this.dshViewerUrl);
+        if (this.stopped || generation !== this.generation) return;
+        if (lease.bootId !== status.bootId) throw new Error("Bridge lease belongs to another boot");
         this.leaseExpiresAt = lease.expiresAt;
       }
       await this.observe(status);
     } catch (error) {
+      if (this.stopped || generation !== this.generation) return;
       this.leaseExpiresAt = 0;
       const reason = error instanceof Error ? error.message : String(error);
       const alreadyReported = this.snapshot.state === "OFFLINE" && this.snapshot.reason === reason;
@@ -149,11 +221,12 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
         reason,
       });
     } finally {
-      if (!this.stopped) this.timer = this.setTimer(() => { void this.poll(); }, this.pollIntervalMs);
+      if (!this.stopped) this.timer = this.setTimer(() => { this.inFlight = this.poll(); }, this.pollIntervalMs);
     }
   }
 
   private async observe(status: ObservedBridgeStatus): Promise<void> {
+    if (this.stopped) return;
     const changed = JSON.stringify(status) !== JSON.stringify(this.snapshot);
     this.snapshot = status;
     if (changed) for (const listener of [...this.listeners]) listener();
@@ -163,14 +236,23 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
 
   private queueReconcile(): void {
     this.transition = this.transition.then(async () => {
-      if (!acceptsBridgeWork(this.snapshot)) {
+      if (this.stopped || !acceptsBridgeWork(this.snapshot)) {
         await this.unmountAllNow();
         return;
       }
       const ready = this.snapshot as ReadyBridgeStatus;
-      for (const attachment of this.attachments) {
-        if (attachment.disposer !== undefined) continue;
+      if (this.attachments.some((item) => item.disposer !== undefined && item.bootId !== ready.bootId)) await this.unmountAllNow();
+      const generation = this.generation;
+      for (const attachment of [...this.attachments]) {
+        if (this.stopped || generation !== this.generation) break;
+        if (!this.attachments.includes(attachment) || attachment.disposer !== undefined) continue;
         const disposer = await attachment.mount(ready);
+        if (this.stopped || generation !== this.generation || !this.attachments.includes(attachment)
+          || !acceptsBridgeWork(this.snapshot) || this.snapshot.bootId !== ready.bootId) {
+          await disposer?.();
+          continue;
+        }
+        attachment.bootId = ready.bootId;
         attachment.disposer = disposer ?? (() => undefined);
       }
     }).catch((error) => { this.onError(error); });
@@ -185,7 +267,7 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
     for (const attachment of [...this.attachments].reverse()) {
       const disposer = attachment.disposer;
       attachment.disposer = undefined;
-      await disposer?.();
+      try { await disposer?.(); } catch (error) { this.onError(error); }
     }
   }
 }

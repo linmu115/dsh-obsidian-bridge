@@ -1,4 +1,5 @@
-import { Service, type Context } from "@deepseek-ai/cordis";
+import { TypertRemoteService } from "@deepseek-ai/dsh-typert-protocol";
+import { type Context } from "@deepseek-ai/cordis";
 import s from "@deepseek-ai/schemastery";
 
 import type { ObsidianBridgeLifecycle } from "./api.ts";
@@ -32,9 +33,11 @@ export async function waitForBrowserOrigin(
   timeoutMs = 10_000,
   now: () => number = Date.now,
   wait: (delayMs: number) => Promise<void> = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs)),
+  signal?: AbortSignal,
 ): Promise<string> {
   const deadline = now() + timeoutMs;
   while (true) {
+    signal?.throwIfAborted();
     try {
       return browserOriginFromWebServer(server);
     } catch (error) {
@@ -49,7 +52,7 @@ export const Config = s.object({
   bridgeOrigin: s.string().default("http://127.0.0.1:18473"),
 });
 
-class BridgeLifecycleService extends Service implements ObsidianBridgeLifecycle {
+export class BridgeLifecycleService extends TypertRemoteService implements ObsidianBridgeLifecycle {
   private readonly runtime: BridgeLifecycleRuntime;
 
   constructor(ctx: Context, config: Config) {
@@ -65,9 +68,13 @@ class BridgeLifecycleService extends Service implements ObsidianBridgeLifecycle 
       onError: (error) => console.warn("[dsh-obsidian-bridge-lifecycle] Bridge unavailable", error),
     });
     this.runtime.start();
-    ctx.effect(() => () => { void this.runtime.dispose(); }, "dsh-obsidian-bridge-lifecycle: host");
+    ctx.effect(() => () => this.runtime.dispose(), "dsh-obsidian-bridge-lifecycle: host");
   }
 
+  getBridgeConfig(): { origin: string } { return { origin: this.runtime.bridgeOrigin }; }
+  getHealth = () => this.runtime.getHealth();
+  registerHealthSource: NonNullable<ObsidianBridgeLifecycle["registerHealthSource"]> = (name, source) => this.runtime.registerHealthSource(name, source);
+  retry = (name?: string) => this.runtime.retry(name);
   get bridgeOrigin(): string { return this.runtime.bridgeOrigin; }
   getSnapshot = () => this.runtime.getSnapshot();
   subscribe = (listener: () => void) => this.runtime.subscribe(listener);
@@ -78,8 +85,11 @@ class BridgeLifecycleService extends Service implements ObsidianBridgeLifecycle 
 
 export function apply(ctx: Context, config: Config): void {
   ctx.inject(inject, async (injected) => {
+    const abort = new AbortController();
+    injected.effect(() => () => abort.abort(), "dsh-obsidian-bridge-lifecycle: host startup");
     const server = (injected as Context & { webServer: WebServerBinding }).webServer;
-    await waitForBrowserOrigin(server);
+    await waitForBrowserOrigin(server, 10_000, Date.now, undefined, abort.signal);
+    abort.signal.throwIfAborted();
     new BridgeLifecycleService(injected, config);
   });
 }

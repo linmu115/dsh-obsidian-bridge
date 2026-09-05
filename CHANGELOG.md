@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 - Unreleased
+
+- Make shutdown idempotent and awaitable, cancel bounded control requests, and guard late status, lease, and attachment results against shutdown and Bridge boot changes.
+- Export the browser-neutral shared data transport at `./transport`; preserve annotation v2, sticker v1, and lifecycle v3 contracts while adding cancellation and full-response timeouts.
+- Deliver the host-selected loopback origin through a typed Remote configuration endpoint before browser lifecycle startup.
+- Expose additive component health, subscriptions, and targeted retry through the lifecycle service.
+
 ## 0.3.1 - 2026-09-04
 
 - Rebuild the unchanged lifecycle v3 controller against the Cordis version

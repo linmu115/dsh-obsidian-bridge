@@ -7,8 +7,26 @@ export type BridgeAttachmentMount = (
   status: ReadyBridgeStatus,
 ) => void | BridgeAttachmentDisposer | Promise<void | BridgeAttachmentDisposer>;
 
+export interface BridgeComponentHealth {
+  state: string;
+  pendingCount?: number;
+  lastError?: string;
+}
+export interface BridgeLifecycleHealth {
+  state: ObservedBridgeStatus["state"];
+  bridgeOrigin: string;
+  components: Readonly<Record<string, BridgeComponentHealth>>;
+}
+export interface BridgeHealthSource {
+  getHealth(): BridgeComponentHealth;
+  retry?(): void;
+  subscribe?(listener: () => void): () => void;
+}
 export interface ObsidianBridgeLifecycle {
   readonly bridgeOrigin: string;
+  getHealth?(): BridgeLifecycleHealth;
+  registerHealthSource?(name: string, source: BridgeHealthSource): () => void;
+  retry?(name?: string): void;
   getSnapshot(): ObservedBridgeStatus;
   subscribe(listener: () => void): () => void;
   mountWhenReady(name: string, mount: BridgeAttachmentMount): () => void;
