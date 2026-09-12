@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3-rc2.2 — 2026-09-12
+
+Complete instance scope across durable capture, authenticated Core deletion, persisted reference ownership and Sticker backlink transport/matching. Legacy unscoped data remains unchanged. See deployment evidence for the tested combination.
+
+
 ## 0.3.3-rc2.1 — DSH 0.1.5-rc.2 (2026-09-12)
 
 29 tests passed. Host publishes runtimeIdentity to clients. Distinct controller IDs prevent one DSH instance invalidating another. Scoped data clients require instance-routing-v1 and a matching handshake identity.
