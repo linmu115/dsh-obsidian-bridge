@@ -16,6 +16,7 @@ export interface BridgeControlClientOptions {
   origin: string;
   clientId: string;
   role: BridgeClientRole;
+  dshInstanceId?: string;
   fetch?: typeof globalThis.fetch;
   requestOrigin?: string;
   requestTimeoutMs?: number;
@@ -86,6 +87,7 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
         lifecycleProtocolVersion: BRIDGE_LIFECYCLE_PROTOCOL_VERSION,
         clientId: options.clientId,
         role: options.role,
+        ...(options.dshInstanceId === undefined ? {} : { dshInstanceId: options.dshInstanceId }),
         ...(bootId === undefined ? {} : { expectedBootId: bootId }),
       }),
     }, false);

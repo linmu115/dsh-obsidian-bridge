@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge-lifecycle",
-  "version": "0.3.2",
+  "version": "0.3.3-rc2.1",
   "description": "Cordis lifecycle controller for the external Obsidian DeepHarness Bridge.",
   "type": "module",
   "license": "MIT",
@@ -49,9 +49,9 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
     "@deepseek-ai/schemastery": "*",
-    "dsh-obsidian-bridge-protocol": "*",
-    "dsh-annotation-core": "*",
-    "@deepseek-ai/dsh-typert-protocol": "*"
+    "dsh-obsidian-bridge-protocol": "0.3.3-rc2.1",
+    "dsh-annotation-core": "0.3.11-rc2.2",
+    "@deepseek-ai/dsh-typert-protocol": "0.1.5-rc.2"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/cordis": {
@@ -74,14 +74,14 @@
     "@deepseek-ai/cordis": "4.0.2",
     "@deepseek-ai/schemastery": "3.18.2",
     "@types/node": "^24.3.0",
-    "dsh-obsidian-bridge-protocol": "git+https://github.com/linmu115/dsh-obsidian-bridge-protocol.git#cfb069a5a09dacfb2e4f64a26036dfe514225132",
+    "dsh-obsidian-bridge-protocol": "file:C:/Users/19717/OneDrive/文档/ChatGPT/dsh/.artifacts/rc2-profile-candidate/dsh-obsidian-bridge-protocol-0.3.3-rc2.1.tgz",
     "tsdown": "^0.22.14",
     "typescript": "^5.9.3",
     "unrun": "^0.3.1",
     "vitest": "^4.1.11",
-    "dsh-annotation-core": "git+https://github.com/linmu115/dsh-annotation-core.git#de5c6d3e4784cfcfa4cc90b4e8c29d75a36a2161",
-    "@deepseek-ai/dsh-typert-protocol": "0.1.2-rc.1",
-    "@deepseek-ai/dsh-typert-registry": "0.1.2-rc.1"
+    "dsh-annotation-core": "file:C:/Users/19717/OneDrive/文档/ChatGPT/dsh/.artifacts/rc2-profile-candidate/dsh-annotation-core-0.3.11-rc2.2.tgz",
+    "@deepseek-ai/dsh-typert-protocol": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-typert-registry": "0.1.5-rc.2"
   },
   "dsh": {
     "client": {

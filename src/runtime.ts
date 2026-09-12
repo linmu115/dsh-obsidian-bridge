@@ -20,6 +20,7 @@ export interface LifecycleRuntimeOptions {
   bridgeOrigin: string;
   clientId: string;
   role: "controller" | "surface";
+  dshInstanceId?: string;
   browserOrigins?: readonly string[];
   dshViewerUrl?: string;
   requestOrigin?: string;
@@ -64,6 +65,7 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
       origin: options.bridgeOrigin,
       clientId: options.clientId,
       role: options.role,
+      ...(options.dshInstanceId === undefined ? {} : { dshInstanceId: options.dshInstanceId }),
       ...(options.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: options.requestTimeoutMs }),
       ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
       ...(options.requestOrigin === undefined ? {} : { requestOrigin: options.requestOrigin }),

@@ -1,7 +1,7 @@
 import { mountBridgeConfig } from "./client-config.ts";
 import { Service, type Context } from "@deepseek-ai/cordis";
 
-import type { ObsidianBridgeLifecycle } from "./api.ts";
+import type { ObsidianBridgeLifecycle, BridgeRuntimeIdentity } from "./api.ts";
 import { BridgeLifecycleRuntime } from "./runtime.ts";
 
 export const inject = ["remote"] as const;
@@ -9,7 +9,7 @@ export const inject = ["remote"] as const;
 class BridgeLifecycleClientService extends Service implements ObsidianBridgeLifecycle {
   private readonly runtime: BridgeLifecycleRuntime;
 
-  constructor(ctx: Context, origin: string) {
+  constructor(ctx: Context, origin: string, readonly runtimeIdentity: BridgeRuntimeIdentity = { profileId: "web" }) {
     super(ctx, "obsidianBridgeLifecycle");
     const requestOrigin = typeof location === "undefined" ? undefined : location.origin;
     this.runtime = new BridgeLifecycleRuntime({
@@ -40,7 +40,7 @@ export async function apply(ctx: Context): Promise<void> {
   const config = await mountBridgeConfig(ctx);
   try {
     abort.signal.throwIfAborted();
-    new BridgeLifecycleClientService(ctx, config.origin);
+    new BridgeLifecycleClientService(ctx, config.origin, config.runtimeIdentity);
     ctx.effect(() => config.dispose, "dsh-obsidian-bridge-lifecycle: client remote");
   } catch (error) {
     await config.dispose();

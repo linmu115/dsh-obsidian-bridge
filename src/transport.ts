@@ -59,6 +59,7 @@ export interface BridgeHttpClientOptions {
   now?: () => number;
   clientId?: string;
   surfaceId?: string;
+  dshInstanceId?: string;
   requestOrigin?: string;
   requestTimeoutMs?: number;
 }
@@ -136,6 +137,7 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
     "reference-delete-v2",
     "sticker-backlink-delete-v1",
     ...(surfaceId === undefined ? [] : ["targeted-deep-link-v1"]),
+    ...(options.dshInstanceId === undefined ? [] : ["instance-routing-v1"]),
   ];
   const requests = createRequestScope(fetchImplementation, options.requestTimeoutMs);
   let token: string | null = null;
@@ -159,7 +161,7 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
     const response = await request("/v2/handshake", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ clientId, ...(surfaceId === undefined ? {} : { surfaceId }) }),
+      body: JSON.stringify({ clientId, ...(options.dshInstanceId === undefined ? {} : { dshInstanceId: options.dshInstanceId }), ...(surfaceId === undefined ? {} : { surfaceId }) }),
       ...(signal === undefined ? {} : { signal }),
     });
     if (!response.ok) throw await responseError(response);
@@ -170,6 +172,7 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
       stickerProtocolVersion?: unknown;
       bridgeOrigin?: unknown;
       surfaceId?: unknown;
+      dshInstanceId?: unknown;
       capabilities?: unknown;
     };
     const capabilities = Array.isArray(body.capabilities) ? body.capabilities : [];
@@ -178,6 +181,7 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
       || body.annotationProtocolVersion !== ANNOTATION_PROTOCOL_VERSION
       || body.stickerProtocolVersion !== STICKER_PROTOCOL_VERSION
       || body.bridgeOrigin !== origin
+      || (options.dshInstanceId !== undefined && body.dshInstanceId !== options.dshInstanceId)
       || (surfaceId !== undefined && body.surfaceId !== surfaceId)
       || !requiredCapabilities.every((item) => capabilities.includes(item))
     ) {

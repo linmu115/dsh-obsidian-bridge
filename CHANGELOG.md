@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3-rc2.1 — DSH 0.1.5-rc.2 (2026-09-12)
+
+29 tests passed. Host publishes runtimeIdentity to clients. Distinct controller IDs prevent one DSH instance invalidating another. Scoped data clients require instance-routing-v1 and a matching handshake identity.
+
+
 ## 0.3.2 - Unreleased
 
 - Make shutdown idempotent and awaitable, cancel bounded control requests, and guard late status, lease, and attachment results against shutdown and Bridge boot changes.

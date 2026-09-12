@@ -5,7 +5,7 @@ export const LIFECYCLE_REMOTE_DESCRIPTORS: readonly InvocationDescriptor[] = [{
   id: "dsh-obsidian-bridge-lifecycle#obsidianBridgeLifecycle/getBridgeConfig",
   service: "obsidianBridgeLifecycle", namespace: "obsidianBridgeLifecycle", method: "getBridgeConfig",
   invocation: { kind: "direct" }, parameters: [],
-  result: { mode: "strict", typeSymbol: "dsh-obsidian-bridge-lifecycle#BridgeConfig", schema: z.object({ origin: z.string().url() }).strict() },
+  result: { mode: "strict", typeSymbol: "dsh-obsidian-bridge-lifecycle#BridgeConfig", schema: z.object({ origin: z.string().url(), runtimeIdentity: z.object({ dshInstanceId: z.string().min(1).optional(), profileId: z.string().min(1) }).strict().optional() }).strict() },
 }];
 export const TYPERT: TypertContribution = {
   package: "dsh-obsidian-bridge-lifecycle", face: "host", schemas: [], invocations: LIFECYCLE_REMOTE_DESCRIPTORS,

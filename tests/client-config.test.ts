@@ -12,3 +12,12 @@ describe("host configured Bridge origin", () => {
     await expect(mountBridgeConfig({ get: (key) => key === "remote" ? { $mount: async () => dispose } : { getBridgeConfig: async () => ({ ok: false, error: { message: "offline" } }) } })).rejects.toThrow("offline"); expect(dispose).toHaveBeenCalledOnce();
   });
 });
+
+it("propagates host instance and profile identity to all mounted clients", async () => {
+  const runtimeIdentity = { dshInstanceId: "instance-rc2", profileId: "web" };
+  const config = await mountBridgeConfig({ get: (key) => key === "remote" ? { $mount: async () => async () => {} } : {
+    getBridgeConfig: async () => ({ ok: true, value: { origin: "http://localhost:28473", runtimeIdentity } }),
+  } });
+  expect(config.runtimeIdentity).toEqual(runtimeIdentity);
+  await config.dispose();
+});

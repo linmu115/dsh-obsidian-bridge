@@ -2,7 +2,7 @@ import { TypertRemoteService } from "@deepseek-ai/dsh-typert-protocol";
 import { type Context } from "@deepseek-ai/cordis";
 import s from "@deepseek-ai/schemastery";
 
-import type { ObsidianBridgeLifecycle } from "./api.ts";
+import type { ObsidianBridgeLifecycle, BridgeRuntimeIdentity } from "./api.ts";
 import { BridgeLifecycleRuntime } from "./runtime.ts";
 
 export * from "./api.ts";
@@ -47,22 +47,27 @@ export async function waitForBrowserOrigin(
   }
 }
 
-export interface Config { bridgeOrigin: string; }
+export interface Config { bridgeOrigin: string; dshInstanceId?: string; profileId?: string; }
 export const Config = s.object({
+  dshInstanceId: s.string().default(""),
+  profileId: s.string().default("web"),
   bridgeOrigin: s.string().default("http://127.0.0.1:18473"),
 });
 
 export class BridgeLifecycleService extends TypertRemoteService implements ObsidianBridgeLifecycle {
   private readonly runtime: BridgeLifecycleRuntime;
+  readonly runtimeIdentity: BridgeRuntimeIdentity;
 
   constructor(ctx: Context, config: Config) {
     super(ctx, "obsidianBridgeLifecycle");
+    this.runtimeIdentity = Object.freeze({ profileId: config.profileId || "web", ...(config.dshInstanceId ? { dshInstanceId: config.dshInstanceId } : {}) });
     const browserOrigin = browserOriginFromWebServer((ctx as Context & { webServer: WebServerBinding }).webServer);
     const dshViewerUrl = (ctx as Context & { connection: ConnectionBinding }).connection.authenticatedUrl(browserOrigin);
     this.runtime = new BridgeLifecycleRuntime({
       bridgeOrigin: config.bridgeOrigin,
-      clientId: "dsh-host-controller",
+      clientId: `dsh-host-controller:${encodeURIComponent(config.dshInstanceId || browserOrigin)}`,
       role: "controller",
+      ...(config.dshInstanceId ? { dshInstanceId: config.dshInstanceId } : {}),
       browserOrigins: [browserOrigin],
       dshViewerUrl,
       onError: (error) => console.warn("[dsh-obsidian-bridge-lifecycle] Bridge unavailable", error),
@@ -71,7 +76,7 @@ export class BridgeLifecycleService extends TypertRemoteService implements Obsid
     ctx.effect(() => () => this.runtime.dispose(), "dsh-obsidian-bridge-lifecycle: host");
   }
 
-  getBridgeConfig(): { origin: string } { return { origin: this.runtime.bridgeOrigin }; }
+  getBridgeConfig(): { origin: string; runtimeIdentity: BridgeRuntimeIdentity } { return { origin: this.runtime.bridgeOrigin, runtimeIdentity: this.runtimeIdentity }; }
   getHealth = () => this.runtime.getHealth();
   registerHealthSource: NonNullable<ObsidianBridgeLifecycle["registerHealthSource"]> = (name, source) => this.runtime.registerHealthSource(name, source);
   retry = (name?: string) => this.runtime.retry(name);

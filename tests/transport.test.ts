@@ -235,3 +235,20 @@ describe("transport cancellation", () => {
     await expect(client.claimReference("capture-1", { annotationProtocolVersion: 2, type: "reference-claim", referenceId: "r", profileId: "web", sessionId: "s", setId: "set" })).rejects.toMatchObject({ code: "idempotency-conflict" }); client.dispose();
   });
 });
+
+it.each(["correct", "missing-capability", "wrong-instance"])("requires matching instance capability: %s", async (mode) => {
+  const fetch = vi.fn(async (url: string | URL | Request, _init?: RequestInit) => {
+    if (String(url).endsWith("/v2/handshake")) {
+      const body = await handshake().json();
+      return json(200, { ...body, dshInstanceId: mode === "wrong-instance" ? "other" : "rc2",
+        capabilities: [...body.capabilities, ...(mode === "missing-capability" ? [] : ["instance-routing-v1"])] });
+    }
+    return json(200, { cursor: 0, actions: [] });
+  });
+  const client = createBridgeHttpClient({ origin: ORIGIN, fetch, now: () => 1_000, dshInstanceId: "rc2" });
+  try {
+    if (mode === "correct") await expect(client.nextActions(0)).resolves.toMatchObject({ actions: [] });
+    else await expect(client.nextActions(0)).rejects.toMatchObject({ code: "protocol-mismatch" });
+    expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toMatchObject({ dshInstanceId: "rc2" });
+  } finally { client.dispose(); }
+});

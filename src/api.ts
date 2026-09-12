@@ -22,7 +22,10 @@ export interface BridgeHealthSource {
   retry?(): void;
   subscribe?(listener: () => void): () => void;
 }
+export interface BridgeRuntimeIdentity { readonly dshInstanceId?: string; readonly profileId: string; }
+
 export interface ObsidianBridgeLifecycle {
+  readonly runtimeIdentity?: BridgeRuntimeIdentity;
   readonly bridgeOrigin: string;
   getHealth?(): BridgeLifecycleHealth;
   registerHealthSource?(name: string, source: BridgeHealthSource): () => void;
