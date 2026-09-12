@@ -65,6 +65,36 @@ const capture: ObsidianReferenceCaptureV2 = {
 };
 
 describe("DSH v2 bridge HTTP client", () => {
+  it.each([
+    { label: "legacy", fields: {} },
+    { label: "aliases without scope", fields: { logicalSessionId: "logical", logicalAnchorId: "logical-anchor", legacySessionId: "old", legacyAnchorId: "old-anchor" } },
+    { label: "current scope", fields: { dshInstanceId: "instance-a", logicalSessionId: "logical", logicalAnchorId: "logical-anchor", legacySessionId: "old", legacyAnchorId: "old-anchor" } },
+    { label: "explicit foreign scope", fields: { dshInstanceId: "instance-b", logicalSessionId: "logical", logicalAnchorId: "logical-anchor", legacySessionId: "old", legacyAnchorId: "old-anchor" } },
+  ])("forwards explicit sticker target fields without borrowing handshake scope: $label", async ({ fields }) => {
+    const sticker: StickerRecord = {
+      stickerId: "9bb3a80e-230d-44d1-a37c-f7b79d2bf315", sessionId: "session-1", anchorId: "anchor-1", quoteHash: "sha256:quote",
+      role: "user", quote: "private quote", occurrence: 0, markdown: "private body", tags: [], color: "yellow", ...fields,
+    };
+    const expected = { stickerId: sticker.stickerId, sessionId: sticker.sessionId, anchorId: sticker.anchorId, quoteHash: sticker.quoteHash, ...fields };
+    const fetch = vi.fn(async (url: string | URL | Request, _init?: RequestInit) => {
+      if (String(url).endsWith("/v2/handshake")) {
+        const body = await handshake().json();
+        return json(200, { ...body, dshInstanceId: "instance-a", capabilities: [...body.capabilities, "instance-routing-v1"] });
+      }
+      if (String(url).endsWith("/delete")) return json(200, { notesChanged: 0, linksRemoved: 0 });
+      return json(200, { backlinks: [] });
+    });
+    const client = createBridgeHttpClient({ origin: ORIGIN, fetch, now: () => 1_000, dshInstanceId: "instance-a" });
+    try {
+      await client.listBacklinks(sticker);
+      await client.deleteStickerBacklinks(sticker);
+      const get = fetch.mock.calls.find(([url]) => String(url).includes("/v1/sticker-backlinks?"));
+      const post = fetch.mock.calls.find(([url]) => String(url).endsWith("/v1/sticker-backlinks/delete"));
+      expect(Object.fromEntries(new URL(String(get?.[0])).searchParams)).toEqual(expected);
+      expect(JSON.parse(String(post?.[1]?.body))).toEqual(expected);
+    } finally { client.dispose(); }
+  });
+
   it("reads the dedicated Obsidian Web Viewer surface from the launch URL", () => {
     expect(bridgeSurfaceIdFromUrl(
       `http://127.0.0.1:3080/?token=secret#dshBridgeSurface=${SURFACE_ID}`,

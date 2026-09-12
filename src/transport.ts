@@ -8,6 +8,7 @@ import {
 import {
   STICKER_PROTOCOL_VERSION, deepLinkActionSchema, parseBridgeMessage,
   stickerBacklinkSchema, stickerBacklinkDeleteResultSchema,
+  stableLogicalTargetShape,
   type DeepLinkAction, type OpenNoteAction, type SessionNoteDocument,
   type StickerBacklink, type StickerBacklinkDeleteResult, type StickerRecord,
 } from "dsh-obsidian-bridge-protocol/data";
@@ -81,6 +82,21 @@ export interface BridgeHttpClient {
   listBacklinks(sticker: StickerRecord): Promise<StickerBacklink[]>;
   deleteStickerBacklinks(sticker: StickerRecord): Promise<StickerBacklinkDeleteResult>;
   dispose(): void;
+}
+
+/** Forward only the explicit target; the authenticated runtime must not rewrite legacy identities. */
+function stickerBacklinkTarget(sticker: StickerRecord): Record<string, string> {
+  const target: Record<string, string> = {
+    stickerId: sticker.stickerId,
+    sessionId: sticker.sessionId,
+    anchorId: sticker.anchorId,
+    quoteHash: sticker.quoteHash,
+  };
+  for (const key of Object.keys(stableLogicalTargetShape) as (keyof typeof stableLogicalTargetShape)[]) {
+    const value = sticker[key];
+    if (value !== undefined) target[key] = value;
+  }
+  return target;
 }
 
 export function normalizeBridgeOrigin(value: string): string {
@@ -325,23 +341,13 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
       await post("/v2/obsidian/open-note", action);
     },
     async listBacklinks(sticker) {
-      const query = new URLSearchParams({
-        stickerId: sticker.stickerId,
-        sessionId: sticker.sessionId,
-        anchorId: sticker.anchorId,
-        quoteHash: sticker.quoteHash,
-      });
+      const query = new URLSearchParams(stickerBacklinkTarget(sticker));
       const response = await authenticated(`/v1/sticker-backlinks?${query.toString()}`);
       const body = await response.json() as { backlinks?: unknown };
       return stickerBacklinkSchema.array().parse(body.backlinks);
     },
     async deleteStickerBacklinks(sticker) {
-      const response = await post("/v1/sticker-backlinks/delete", {
-        stickerId: sticker.stickerId,
-        sessionId: sticker.sessionId,
-        anchorId: sticker.anchorId,
-        quoteHash: sticker.quoteHash,
-      });
+      const response = await post("/v1/sticker-backlinks/delete", stickerBacklinkTarget(sticker));
       return stickerBacklinkDeleteResultSchema.parse(await response.json());
     },
     dispose() {
