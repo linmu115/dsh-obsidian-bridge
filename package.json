@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge-lifecycle",
-  "version": "0.3.3-rc2.3",
+  "version": "0.3.3-rc2.4",
   "description": "Cordis lifecycle controller for the external Obsidian DeepHarness Bridge.",
   "type": "module",
   "license": "MIT",
@@ -50,7 +50,7 @@
     "@deepseek-ai/cordis": "*",
     "@deepseek-ai/schemastery": "*",
     "dsh-obsidian-bridge-protocol": "0.3.3-rc2.1",
-    "dsh-annotation-core": "0.3.11-rc2.2 || 0.3.12-rc2.1",
+    "dsh-annotation-core": "0.3.11-rc2.2 || 0.3.12-rc2.1 || 0.3.12-rc2.2",
     "@deepseek-ai/dsh-typert-protocol": "0.1.5-rc.2"
   },
   "peerDependenciesMeta": {
