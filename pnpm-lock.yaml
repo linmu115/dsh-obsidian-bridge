@@ -28,8 +28,8 @@ importers:
         specifier: ^24.3.0
         version: 24.13.3
       dsh-annotation-core:
-        specifier: file:../../../artifacts/session-context-graph-20260913/dsh-annotation-core-0.3.12-rc2.1.tgz
-        version: file:../../../artifacts/session-context-graph-20260913/dsh-annotation-core-0.3.12-rc2.1.tgz(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-typert-protocol@0.1.5-rc.2(@deepseek-ai/cordis@4.0.2))(@deepseek-ai/schemastery@3.18.2)
+        specifier: file:D:/AI/DeepSeekHarness-Plugin/artifacts/knowledge-network-rc2-20260914/dsh-annotation-core-0.3.12-rc2.6.tgz
+        version: file:../../../artifacts/knowledge-network-rc2-20260914/dsh-annotation-core-0.3.12-rc2.6.tgz(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-typert-protocol@0.1.5-rc.2(@deepseek-ai/cordis@4.0.2))(@deepseek-ai/schemastery@3.18.2)
       dsh-obsidian-bridge-protocol:
         specifier: file:C:/Users/19717/OneDrive/文档/ChatGPT/dsh/.artifacts/rc2-profile-candidate/dsh-obsidian-bridge-protocol-0.3.3-rc2.1.tgz
         version: file:C:/Users/19717/OneDrive/文档/ChatGPT/dsh/.artifacts/rc2-profile-candidate/dsh-obsidian-bridge-protocol-0.3.3-rc2.1.tgz
@@ -389,9 +389,9 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
-  dsh-annotation-core@file:../../../artifacts/session-context-graph-20260913/dsh-annotation-core-0.3.12-rc2.1.tgz:
-    resolution: {integrity: sha512-0fxYM53CJuxhMgkKmODwm0szGiBGhAyuMgkNkwb99e8ymaj9XRffUezQOmdentkOiLTmGS4vcneXxLh+x8Ihkw==, tarball: file:../../../artifacts/session-context-graph-20260913/dsh-annotation-core-0.3.12-rc2.1.tgz}
-    version: 0.3.12-rc2.1
+  dsh-annotation-core@file:../../../artifacts/knowledge-network-rc2-20260914/dsh-annotation-core-0.3.12-rc2.6.tgz:
+    resolution: {integrity: sha512-ektEzE6VO31Vju/skd2pYwISnCQhInWP22qRkrEB/ngrOg2XqE0Z60nkuElPCvCczWtCleKgVgbp0O/m/ClPTg==, tarball: file:../../../artifacts/knowledge-network-rc2-20260914/dsh-annotation-core-0.3.12-rc2.6.tgz}
+    version: 0.3.12-rc2.6
     engines: {node: '>=20'}
     peerDependencies:
       '@deepseek-ai/cordis': '*'
@@ -1036,7 +1036,7 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  dsh-annotation-core@file:../../../artifacts/session-context-graph-20260913/dsh-annotation-core-0.3.12-rc2.1.tgz(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-typert-protocol@0.1.5-rc.2(@deepseek-ai/cordis@4.0.2))(@deepseek-ai/schemastery@3.18.2):
+  dsh-annotation-core@file:../../../artifacts/knowledge-network-rc2-20260914/dsh-annotation-core-0.3.12-rc2.6.tgz(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-typert-protocol@0.1.5-rc.2(@deepseek-ai/cordis@4.0.2))(@deepseek-ai/schemastery@3.18.2):
     dependencies:
       zod: 4.4.3
     optionalDependencies:

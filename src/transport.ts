@@ -66,6 +66,7 @@ export interface BridgeHttpClientOptions {
 }
 
 export interface BridgeHttpClient {
+  knowledge(operation: string, input: Record<string, unknown>): Promise<unknown>;
   readonly origin: string;
   preflight(): Promise<void>;
   nextActions(after: number, signal?: AbortSignal): Promise<BridgeActionPage>;
@@ -246,6 +247,11 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
 
   return {
     origin,
+    async knowledge(operation, input) {
+      if (!/^[a-z-]{1,40}$/.test(operation)) throw new TypeError('Invalid knowledge operation');
+      const response = await post('/v1/knowledge/' + operation, input);
+      return response.json();
+    },
     async preflight() {
       const response = await request("/v2/health");
       if (!response.ok) throw await responseError(response);
