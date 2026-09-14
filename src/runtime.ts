@@ -76,8 +76,8 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
     this.browserOrigins = Object.freeze([...(options.browserOrigins ?? [])]);
     this.dshViewerUrl = options.dshViewerUrl;
     this.now = options.now ?? Date.now;
-    this.setTimer = options.setTimer ?? setTimeout;
-    this.clearTimer = options.clearTimer ?? clearTimeout;
+    this.setTimer = options.setTimer ?? globalThis.setTimeout.bind(globalThis);
+    this.clearTimer = options.clearTimer ?? globalThis.clearTimeout.bind(globalThis);
     this.onError = options.onError ?? (() => undefined);
     this.snapshot = {
       lifecycleProtocolVersion: BRIDGE_LIFECYCLE_PROTOCOL_VERSION,

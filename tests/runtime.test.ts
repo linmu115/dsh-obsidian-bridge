@@ -21,6 +21,21 @@ function response(body: unknown): Response {
 }
 
 describe("BridgeLifecycleRuntime", () => {
+  it("keeps the global receiver when scheduling and cancelling browser polling", async () => {
+    const originalTimer=globalThis.setTimeout;
+    const scheduled=vi.fn(function(this:unknown){ expect(this).toBe(globalThis); return 42 as unknown as ReturnType<typeof setTimeout>; });
+    const cancelled=vi.fn(function(this:unknown){ expect(this).toBe(globalThis); });
+    vi.stubGlobal('setTimeout',scheduled);vi.stubGlobal('clearTimeout',cancelled);
+    const runtime=new BridgeLifecycleRuntime({bridgeOrigin:'http://127.0.0.1:18474',clientId:'browser-timer',role:'surface',fetch:vi.fn(async()=>{throw new Error('synthetic offline');})});
+    try {
+      runtime.start();
+      await new Promise<void>(resolve=>originalTimer(resolve,0));
+      expect(scheduled).toHaveBeenCalled();
+      await runtime.dispose();
+      expect(cancelled).toHaveBeenCalledWith(42);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it("mounts in registration order and unmounts in strict reverse order", async () => {
     const calls: string[] = [];
     let statusCall = 0;
