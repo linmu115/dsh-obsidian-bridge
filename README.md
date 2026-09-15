@@ -1,6 +1,6 @@
 # DSH Obsidian Bridge Lifecycle
 
-当前版本 **0.3.3-rc2.13**，面向 **DSH 0.1.5-rc.2**。这是 DSH 端的桥接连接服务，通常由 [Obsidian Session Reference Suite](https://github.com/linmu115/dsh-obsidian-session-reference-suite/blob/codex/rc2-session-context-graph/README.md) 统一加载。
+当前版本 **0.3.3-rc2.14**，面向 **DSH 0.1.5-rc.2**。这是 DSH 端的桥接连接服务，通常由 [Obsidian Session Reference Suite](https://github.com/linmu115/dsh-obsidian-session-reference-suite/blob/codex/rc2-session-context-graph/README.md) 统一加载。
 
 ## 它负责什么
 
@@ -56,3 +56,5 @@ pnpm pack --pack-destination .artifacts
 `test` 和 `pack` 的前置步骤会执行构建。测试覆盖连接生命周期、身份、传输与配置；跨应用行为还需要整套安装后的实际验收。
 
 开发接口见 [src/api.ts](src/api.ts)：`getSnapshot`、`subscribe`、`mountWhenReady`、`drain`、`resume` 以及健康与重试接口。版本变化见 [CHANGELOG](CHANGELOG.md) 和[当前兼容说明](docs/changes/2026-09-15-graph-reference-lifecycle-cohort.md)。
+
+本次配套更新支持 Maintenance 的轻量引用目录，详见[兼容变更说明](docs/changes/2026-09-15-maintenance-reference-directory.md)。
