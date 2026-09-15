@@ -1,8 +1,8 @@
 # DSH Obsidian Bridge Lifecycle
 
-本补丁同步 **原生 Agent 上下文管理组合** 的兼容清单，接受 Annotation Core **0.3.12-rc2.11**；本插件原有职责保持不变，托管引擎不在本阶段范围内。见[组合兼容说明](docs/changes/2026-09-15-native-context-cohort.md)。
+本补丁配套 Annotation Core **0.3.12-rc2.12**，跨会话引用选择器使用 DSH 会话栏的可读标题。见[组合兼容说明](docs/changes/2026-09-15-picker-title-cohort.md)。
 
-当前版本 **0.3.3-rc2.15**，面向 **DSH 0.1.5-rc.2**。这是 DSH 端的桥接连接服务，通常由 [Obsidian Session Reference Suite](https://github.com/linmu115/dsh-obsidian-session-reference-suite/blob/codex/rc2-session-context-graph/README.md) 统一加载。
+当前版本 **0.3.3-rc2.16**，面向 **DSH 0.1.5-rc.2**。这是 DSH 端的桥接连接服务，通常由 [Obsidian Session Reference Suite](https://github.com/linmu115/dsh-obsidian-session-reference-suite/blob/codex/rc2-session-context-graph/README.md) 统一加载。
 
 ## 它负责什么
 
