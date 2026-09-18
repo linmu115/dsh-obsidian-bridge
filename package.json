@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge-lifecycle",
-  "version": "0.3.3-rc2.16",
+  "version": "0.4.0-rc2.1",
   "description": "Cordis lifecycle controller for the external Obsidian DeepHarness Bridge.",
   "type": "module",
   "license": "MIT",
@@ -51,8 +51,9 @@
     "@deepseek-ai/cordis": "*",
     "@deepseek-ai/schemastery": "*",
     "dsh-obsidian-bridge-protocol": "0.3.3-rc2.1",
-    "dsh-annotation-core": "0.3.11-rc2.2 || 0.3.12-rc2.1 || 0.3.12-rc2.2 || 0.3.12-rc2.3 || 0.3.12-rc2.4 || 0.3.12-rc2.5 || 0.3.12-rc2.6 || 0.3.12-rc2.7 || 0.3.12-rc2.8 || 0.3.12-rc2.9 || 0.3.12-rc2.10 || 0.3.12-rc2.11 || 0.3.12-rc2.12",
-    "@deepseek-ai/dsh-typert-protocol": "0.1.5-rc.2"
+    "dsh-annotation-core": "0.3.11-rc2.2 || 0.3.12-rc2.1 || 0.3.12-rc2.2 || 0.3.12-rc2.3 || 0.3.12-rc2.4 || 0.3.12-rc2.5 || 0.3.12-rc2.6 || 0.3.12-rc2.7 || 0.3.12-rc2.8 || 0.3.12-rc2.9 || 0.3.12-rc2.10 || 0.3.12-rc2.11 || 0.3.12-rc2.12 || 0.3.12-rc2.19",
+    "@deepseek-ai/dsh-typert-protocol": "0.1.5-rc.2",
+    "react": "^18.2.0"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/cordis": {
@@ -69,6 +70,9 @@
     },
     "@deepseek-ai/dsh-typert-protocol": {
       "optional": true
+    },
+    "react": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -80,9 +84,11 @@
     "typescript": "^5.9.3",
     "unrun": "^0.3.1",
     "vitest": "^4.1.11",
-    "dsh-annotation-core": "file:D:/AI/DeepSeekHarness-Plugin/artifacts/session-main-graph-20260914/dsh-annotation-core-0.3.12-rc2.8.tgz",
+    "dsh-annotation-core": "link:../dsh-annotation-core",
     "@deepseek-ai/dsh-typert-protocol": "0.1.5-rc.2",
-    "@deepseek-ai/dsh-typert-registry": "0.1.5-rc.2"
+    "@deepseek-ai/dsh-typert-registry": "0.1.5-rc.2",
+    "react": "^18.2.0",
+    "@types/react": "~18.3.1"
   },
   "dsh": {
     "client": {

@@ -1,3 +1,4 @@
+import { BridgeActionChannel } from "./action-channel.ts";
 import {
   BRIDGE_LIFECYCLE_PROTOCOL_VERSION,
   acceptsBridgeWork,
@@ -24,6 +25,8 @@ export interface LifecycleRuntimeOptions {
   browserOrigins?: readonly string[];
   dshViewerUrl?: string;
   requestOrigin?: string;
+  surfaceId?: string;
+  profileId?: string;
   pollIntervalMs?: number;
   requestTimeoutMs?: number;
   leaseTtlMs?: number;
@@ -36,6 +39,11 @@ export interface LifecycleRuntimeOptions {
 
 export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
   readonly bridgeOrigin: string;
+  readonly capabilities = Object.freeze(["reference-channel-v1", "action-dispatch-v1"]);
+  private readonly channel: BridgeActionChannel;
+  get transport() { return this.channel.borrowedTransport; }
+  registerActionHandler: NonNullable<ObsidianBridgeLifecycle["registerActionHandler"]> = (name, handler) => this.channel.registerActionHandler(name, handler);
+  retryActions = () => this.channel.retryActions();
   private readonly control: BridgeControlClient;
   private readonly attachments: Attachment[] = [];
   private readonly healthSources = new Map<string, BridgeHealthSource>();
@@ -85,6 +93,15 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
       stateChangedAt: this.now(),
       reason: "Bridge status has not been observed yet",
     };
+    this.channel = new BridgeActionChannel(this, {
+      origin: this.bridgeOrigin, clientId: `${options.clientId}:actions`, role: options.role,
+      ...(options.profileId === undefined ? {} : { profileId: options.profileId }),
+      ...(options.dshInstanceId === undefined ? {} : { dshInstanceId: options.dshInstanceId }),
+      ...(options.surfaceId === undefined ? {} : { surfaceId: options.surfaceId }),
+      ...(options.requestOrigin === undefined ? {} : { requestOrigin: options.requestOrigin }),
+      ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
+      ...(options.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: options.requestTimeoutMs }),
+    });
   }
 
   getSnapshot(): ObservedBridgeStatus { return this.snapshot; }
@@ -177,7 +194,8 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
       for (const listener of [...this.listeners]) listener();
       await this.inFlight;
       await this.unmountAll();
-      await this.control.dispose();
+      await this.channel.dispose();
+      this.control.dispose();
       this.listeners.clear();
       for (const unsubscribe of this.healthSubscriptions.values()) unsubscribe();
       this.healthSubscriptions.clear();

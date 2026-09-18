@@ -1,3 +1,4 @@
+import { apply as mountReferences } from "./reference/host.ts";
 import { TypertRemoteService } from "@deepseek-ai/dsh-typert-protocol";
 import { type Context } from "@deepseek-ai/cordis";
 import s from "@deepseek-ai/schemastery";
@@ -67,16 +68,22 @@ export class BridgeLifecycleService extends TypertRemoteService implements Obsid
       bridgeOrigin: config.bridgeOrigin,
       clientId: `dsh-host-controller:${encodeURIComponent(config.dshInstanceId || browserOrigin)}`,
       role: "controller",
+      profileId: this.runtimeIdentity.profileId,
       ...(config.dshInstanceId ? { dshInstanceId: config.dshInstanceId } : {}),
       browserOrigins: [browserOrigin],
       dshViewerUrl,
       onError: (error) => console.warn("[dsh-obsidian-bridge-lifecycle] Bridge unavailable", error),
     });
+    ctx.inject(["annotationCoreHost"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0], { profileId: this.runtimeIdentity.profileId }));
     this.runtime.start();
     ctx.effect(() => () => this.runtime.dispose(), "dsh-obsidian-bridge-lifecycle: host");
   }
 
   getBridgeConfig(): { origin: string; runtimeIdentity: BridgeRuntimeIdentity } { return { origin: this.runtime.bridgeOrigin, runtimeIdentity: this.runtimeIdentity }; }
+  get capabilities() { return this.runtime.capabilities; }
+  get transport() { return this.runtime.transport; }
+  registerActionHandler: NonNullable<ObsidianBridgeLifecycle["registerActionHandler"]> = (name, handler) => this.runtime.registerActionHandler(name, handler);
+  retryActions = () => this.runtime.retryActions();
   getHealth = () => this.runtime.getHealth();
   registerHealthSource: NonNullable<ObsidianBridgeLifecycle["registerHealthSource"]> = (name, source) => this.runtime.registerHealthSource(name, source);
   retry = (name?: string) => this.runtime.retry(name);

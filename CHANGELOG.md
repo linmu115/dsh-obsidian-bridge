@@ -1,3 +1,9 @@
+## 0.4.0-rc2.1 — 2026-09-18
+
+Consolidate existing reference transport, sources, delivery, navigation and health into Bridge; provide borrowed transport, action registration and Core-compensated handoff.
+
+See [integration report](docs/changes/2026-09-18-bridge-consolidation.md).
+
 # Changelog
 
 ## 0.3.3-rc2.3 — 2026-09-13

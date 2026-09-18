@@ -24,7 +24,7 @@ export default [
     dts: false,
     clean: false,
     deps: {
-      neverBundle: ["@deepseek-ai/cordis"],
+      neverBundle: ["@deepseek-ai/cordis", "react", "react/jsx-runtime"],
       alwaysBundle: protocol,
     },
     outputOptions: {
