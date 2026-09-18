@@ -1,6 +1,6 @@
 import type { VaultIdentity, VaultBindingSnapshot, ChangeVaultBindingRequest, DshInstanceIdentity } from "dsh-obsidian-bridge-protocol/binding";
 import type { BridgeHttpClient, BridgeAction } from "./transport.ts";
-import type { AnnotationCoreClient } from "dsh-annotation-core/client-api";
+import type { ObsidianNoteReferenceSource } from "dsh-annotation-core/protocol";
 import type {} from "@deepseek-ai/cordis";
 import type { BridgeStatus, ObservedBridgeStatus } from "dsh-obsidian-bridge-protocol";
 
@@ -46,7 +46,7 @@ export interface ReferenceHandoffInput {
   vaultId?: string;
   sessionId: string;
   operationId: string;
-  prepare(): Promise<{ referenceId: string; source: Parameters<AnnotationCoreClient["addReference"]>[1] }>;
+  prepare(): Promise<{ referenceId: string; source: ObsidianNoteReferenceSource }>;
   commit(result: ReferenceHandoffResult): Promise<void>;
   assertCurrent(): void;
 }

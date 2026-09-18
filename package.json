@@ -1,36 +1,50 @@
 {
-  "name": "dsh-obsidian-bridge-lifecycle",
-  "version": "0.4.0-rc2.2",
-  "description": "Cordis lifecycle controller for the external Obsidian DeepHarness Bridge.",
+  "name": "dsh-obsidian-bridge",
+  "version": "0.4.1-rc2.1",
+  "description": "Unified DSH Obsidian Bridge with explicit Vault binding, routed reference channels and optional independent consumers.",
   "type": "module",
   "license": "MIT",
-  "main": "lib/index.js",
-  "types": "lib/types/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./lib/types/index.d.ts",
-      "default": "./lib/index.js"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./client": {
-      "types": "./lib/types/client.d.ts",
-      "default": "./lib/client.js"
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
     },
     "./api": {
-      "types": "./lib/types/api.d.ts",
-      "default": "./lib/api.js"
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
     },
     "./package.json": "./package.json",
     "./transport": {
-      "types": "./lib/types/transport.d.ts",
-      "default": "./lib/transport.js"
+      "types": "./dist/transport.d.ts",
+      "default": "./dist/transport.js"
     },
     "./typert": {
-      "types": "./lib/types/typert.d.ts",
-      "default": "./lib/typert.js"
-    }
+      "types": "./dist/typert.d.ts",
+      "default": "./dist/typert.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "default": "./dist/protocol.js"
+    },
+    "./protocol/data": {
+      "types": "./dist/protocol/data.d.ts",
+      "default": "./dist/protocol/data.js"
+    },
+    "./protocol/binding": {
+      "types": "./dist/protocol/binding.d.ts",
+      "default": "./dist/protocol/binding.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml"
   },
   "files": [
-    "lib",
+    "dist",
+    "cordis.patch.yml",
     "CHANGELOG.md",
     "README.md",
     "LICENSE",
@@ -40,7 +54,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node -e \"fs.rmSync('lib',{recursive:true,force:true})\" && tsc -p tsconfig.build.json && tsdown --config-loader unrun --config tsdown.config.ts",
+    "build": "tsdown --config-loader unrun --config tsdown.config.ts",
     "prepack": "pnpm build",
     "pretest": "pnpm build",
     "typecheck": "tsc --noEmit",
@@ -50,7 +64,6 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
     "@deepseek-ai/schemastery": "*",
-    "dsh-obsidian-bridge-protocol": "0.4.0-rc2.1",
     "dsh-annotation-core": "0.3.11-rc2.2 || 0.3.12-rc2.1 || 0.3.12-rc2.2 || 0.3.12-rc2.3 || 0.3.12-rc2.4 || 0.3.12-rc2.5 || 0.3.12-rc2.6 || 0.3.12-rc2.7 || 0.3.12-rc2.8 || 0.3.12-rc2.9 || 0.3.12-rc2.10 || 0.3.12-rc2.11 || 0.3.12-rc2.12 || 0.3.12-rc2.19",
     "@deepseek-ai/dsh-typert-protocol": "0.1.5-rc.2",
     "react": "^18.2.0"
@@ -60,9 +73,6 @@
       "optional": true
     },
     "@deepseek-ai/schemastery": {
-      "optional": true
-    },
-    "dsh-obsidian-bridge-protocol": {
       "optional": true
     },
     "dsh-annotation-core": {
@@ -93,6 +103,9 @@
   "dsh": {
     "client": {
       "platform": "web"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
     }
   },
   "dshKnowledge": {

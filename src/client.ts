@@ -34,7 +34,7 @@ class BridgeLifecycleClientService extends Service implements ObsidianBridgeLife
     ctx.effect(()=>()=>{stopped=true;if(timer)clearTimeout(timer);},"obsidian bridge: surface routes");
     ctx.inject(["sessions", "annotationCore"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0]));
     registerBridgeHealth(ctx as unknown as Parameters<typeof registerBridgeHealth>[0], this);
-    ctx.effect(() => () => this.runtime.dispose(), "dsh-obsidian-bridge-lifecycle: client");
+    ctx.effect(() => () => this.runtime.dispose(), "dsh-obsidian-bridge: client");
   }
 
   handoffReference: NonNullable<ObsidianBridgeLifecycle["handoffReference"]> = input => {
@@ -64,12 +64,12 @@ class BridgeLifecycleClientService extends Service implements ObsidianBridgeLife
 
 export async function apply(ctx: Context): Promise<void> {
   const abort = new AbortController();
-  ctx.effect(() => () => abort.abort(), "dsh-obsidian-bridge-lifecycle: client startup");
+  ctx.effect(() => () => abort.abort(), "dsh-obsidian-bridge: client startup");
   const config = await mountBridgeConfig(ctx);
   try {
     abort.signal.throwIfAborted();
     new BridgeLifecycleClientService(ctx, config);
-    ctx.effect(() => config.dispose, "dsh-obsidian-bridge-lifecycle: client remote");
+    ctx.effect(() => config.dispose, "dsh-obsidian-bridge: client remote");
   } catch (error) {
     await config.dispose();
     throw error;

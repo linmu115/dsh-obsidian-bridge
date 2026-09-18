@@ -15,7 +15,7 @@ import { BridgeLifecycleRuntime } from "./runtime.ts";
 export * from "./api.ts";
 export { BridgeLifecycleRuntime } from "./runtime.ts";
 
-export const name = "dsh-obsidian-bridge-lifecycle";
+export const name = "dsh-obsidian-bridge";
 export const inject = ["webServer", "connection", "storageDomain"] as const;
 
 interface WebServerBinding {
@@ -98,7 +98,7 @@ export class BridgeLifecycleService extends TypertRemoteService implements Obsid
       injected.effect(()=>registerBridgeBusinessPage(pages,this,identity),"obsidian bridge: maintenance business page");
     });
     ctx.inject(["annotationCoreHost"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0], { profileId: this.runtimeIdentity.profileId }));
-    ctx.effect(() => async () => {try{await this.discovery.dispose();}finally{await this.runtime.dispose();}}, "dsh-obsidian-bridge-lifecycle: host");
+    ctx.effect(() => async () => {try{await this.discovery.dispose();}finally{await this.runtime.dispose();}}, "dsh-obsidian-bridge: host");
   }
 
   getInstanceIdentity=()=>this.identity;
@@ -125,7 +125,7 @@ export class BridgeLifecycleService extends TypertRemoteService implements Obsid
 export function apply(ctx: Context, config: Config): void {
   ctx.inject(inject, async (injected) => {
     const abort = new AbortController();
-    injected.effect(() => () => abort.abort(), "dsh-obsidian-bridge-lifecycle: host startup");
+    injected.effect(() => () => abort.abort(), "dsh-obsidian-bridge: host startup");
     const server = (injected as Context & { webServer: WebServerBinding }).webServer;
     await waitForBrowserOrigin(server, 10_000, Date.now, undefined, abort.signal);
     abort.signal.throwIfAborted();

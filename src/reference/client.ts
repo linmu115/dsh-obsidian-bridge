@@ -120,5 +120,5 @@ export function apply(ctx: Context): void {
     unregisterSource();
     unsubscribe?.();
     if (typeof document !== "undefined") document.removeEventListener("visibilitychange", visibility);
-  }, "dsh-obsidian-reference-adapter: client");
+  }, "dsh-obsidian-bridge: references: client");
 }

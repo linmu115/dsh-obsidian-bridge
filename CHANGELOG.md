@@ -1,3 +1,12 @@
+## 0.4.1-rc2.1 — 2026-09-18
+
+- Publish one plugin as `dsh-obsidian-bridge`, with its own single-node bundle patch and matching host, ModuleLoader and Typert package identities.
+- Bundle protocol runtime and public declarations into `dist`; expose `/protocol`, `/protocol/data`, `/protocol/binding`, `/api` and `/transport` without requiring any retired bridge packages.
+- Preserve the `obsidianBridgeLifecycle` service, durable identity storage and identity URL. Core, Sticker and Maintenance remain independent capabilities.
+- Verify public exports in a physical isolated fixture containing only this bridge and host dependencies, including no-Core startup/late-Core registration regressions.
+
+See [single bridge package report](docs/changes/2026-09-18-single-bridge-package.md).
+
 ## 0.4.0-rc2.1 — 2026-09-18
 
 ## 0.4.0-rc2.2 — 2026-09-18

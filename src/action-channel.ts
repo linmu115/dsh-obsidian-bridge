@@ -31,8 +31,8 @@ export class BridgeActionChannel {
           && (action.targetSurfaceId === undefined || action.targetSurfaceId === options.surfaceId)
           && [...this.handlers.values()].filter(handler => handler.accepts(action)).length === 1,
         isVisible: () => typeof document === "undefined" || document.visibilityState !== "hidden",
-        onError: error => console.warn("[dsh-obsidian-bridge-lifecycle] action transport unavailable", error),
-        onActionError: (error, action) => console.warn("[dsh-obsidian-bridge-lifecycle] action failed", { actionId: action.actionId, error }),
+        onError: error => console.warn("[dsh-obsidian-bridge] action transport unavailable", error),
+        onActionError: (error, action) => console.warn("[dsh-obsidian-bridge] action failed", { actionId: action.actionId, error }),
       });
       const unregisterHealth = lifecycle.registerHealthSource?.("actions", this.polling);
       const polling = this.polling;

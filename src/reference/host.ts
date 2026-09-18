@@ -47,5 +47,5 @@ export function apply(ctx: Context, config: Config): void {
   ctx.effect(() => async () => {
     unregisterAttachment();
     unregisterSource();
-  }, "dsh-obsidian-reference-adapter: host");
+  }, "dsh-obsidian-bridge: references: host");
 }

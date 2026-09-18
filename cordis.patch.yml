@@ -1,0 +1,7 @@
+# A single Bridge runtime; Core, Sticker and Maintenance remain independent plugins.
+- insert:
+    - id: obsidian-bridge
+      name: dsh-obsidian-bridge
+      config:
+        profileId: web
+        bridgeOrigin: 'http://127.0.0.1:18473'
