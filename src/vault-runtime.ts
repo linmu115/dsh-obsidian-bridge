@@ -92,14 +92,18 @@ export class VaultBridgeRuntime implements ObsidianBridgeLifecycle {
   this.changed();
  }
  private owned(identity:VaultIdentity){return identity.binding.target?.instanceId===this.options.identity.instanceId&&identity.binding.target.profileId===this.options.identity.profileId;}
- async changeVaultBinding(vaultId:string,input:ChangeVaultBindingRequest):Promise<VaultBindingSnapshot>{
+ async changeVaultBinding(vaultId:string,input:ChangeVaultBindingRequest,guard?:{identity:VaultIdentity;signal:AbortSignal}):Promise<VaultBindingSnapshot>{
+  guard?.signal.throwIfAborted();
   if(this.identityConflict)throw new Error(this.identityConflict);
   const candidate=this.candidates.get(vaultId);if(!candidate)throw new Error("Vault discovery candidate unavailable");
   if(this.snapshots.get(vaultId)?.state==="conflict")throw new Error("Vault discovery identity conflict");
-  const fresh=await this.probe(candidate.origin);if(fresh.vaultId!==vaultId||fresh.bootId!==candidate.bootId)throw new Error("Vault candidate identity changed");
+  const fresh=await this.probe(candidate.origin);if(fresh.vaultId!==vaultId||fresh.bootId!==candidate.bootId||fresh.publisherId!==candidate.publisherId)throw new Error("Vault candidate identity changed");
+  if(guard&&(fresh.bootId!==guard.identity.bootId||fresh.publisherId!==guard.identity.publisherId||fresh.origin!==guard.identity.origin))throw new Error("所选 Vault 在线身份已改变，请重新选择");
+  guard?.signal.throwIfAborted();
   const control=createBridgeControlClient({origin:fresh.origin,clientId:`dsh-binding:${this.options.identity.publisherId}`,role:"controller",dshInstanceId:this.options.identity.instanceId,profileId:this.options.identity.profileId,
    vaultId,bindingRevision:input.expectedRevision,dshBootId:this.options.identity.bootId,dshOrigin:this.options.identity.origin,...(this.options.fetch?{fetch:this.options.fetch}:{})});
-  try {return await control.changeBinding(input);}finally{await control.dispose();}
+  const cancel=()=>control.cancelPending();guard?.signal.addEventListener('abort',cancel,{once:true});
+  try {guard?.signal.throwIfAborted();return await control.changeBinding(input);}finally{guard?.signal.removeEventListener('abort',cancel);await control.dispose();}
  }
  guardHandoff(input:ReferenceHandoffInput):ReferenceHandoffInput {
   let pinned:Route|undefined;

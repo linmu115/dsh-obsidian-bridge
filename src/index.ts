@@ -1,4 +1,5 @@
 import { registerBridgeBusinessPage, type BusinessPageService } from './business-page.ts';
+import { createVaultFolderBinding } from './vault-folder.ts';
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { DSH_IDENTITY_PATH, type DshInstanceIdentity, type ChangeVaultBindingRequest } from "dsh-obsidian-bridge-protocol/binding";
 import { VaultBridgeRuntime } from "./vault-runtime.ts";
@@ -95,7 +96,11 @@ export class BridgeLifecycleService extends TypertRemoteService implements Obsid
     ctx.inject(["maintenanceBusinessPages"], injected => {
       const pages = injected.get("maintenanceBusinessPages") as BusinessPageService;
       if(pages.identity.instanceId!==identity.instanceId||pages.identity.profileId!==identity.profileId)return;
-      injected.effect(()=>registerBridgeBusinessPage(pages,this,identity),"obsidian bridge: maintenance business page");
+      const bindSelectedFolder=createVaultFolderBinding({lifecycle:this,identity,probe:origin=>this.runtime.probe(origin),bind:async(vaultId,request,expected,signal)=>{
+        const result=await this.runtime.changeVaultBinding(vaultId,request,{identity:expected,signal});
+        await this.discovery.refresh();return result;
+      }});
+      injected.effect(()=>registerBridgeBusinessPage(pages,this,identity,{bindSelectedFolder}),"obsidian bridge: maintenance business page");
     });
     ctx.inject(["annotationCoreHost"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0], { profileId: this.runtimeIdentity.profileId }));
     ctx.effect(() => async () => {try{await this.discovery.dispose();}finally{await this.runtime.dispose();}}, "dsh-obsidian-bridge: host");

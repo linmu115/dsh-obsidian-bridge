@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge",
-  "version": "0.4.1-rc2.1",
+  "version": "0.4.1-rc2.2",
   "description": "Unified DSH Obsidian Bridge with explicit Vault binding, routed reference channels and optional independent consumers.",
   "type": "module",
   "license": "MIT",

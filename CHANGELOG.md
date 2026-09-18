@@ -1,3 +1,10 @@
+## 0.4.1-rc2.2 — 2026-09-18
+
+- Add “选择文件夹并绑定” to the optional Maintenance plugin information page. Open a Windows native folder picker with cancellation and a 60-second limit.
+- Read only the selected Vault root and Bridge installation, then match a live Companion location proof to its canonical path and Vault/publisher/boot identity before the existing CAS binding protocol runs.
+- Reject copied Vault identities, offline or conflicting discoveries, changed publishers and foreign bindings. Selecting a Vault already bound to this instance succeeds without writing.
+- Keep Maintenance optional and preserve the existing explicit rebind/unbind controls. See [folder binding report](docs/changes/2026-09-18-vault-folder-binding.md).
+
 ## 0.4.1-rc2.1 — 2026-09-18
 
 - Publish one plugin as `dsh-obsidian-bridge`, with its own single-node bundle patch and matching host, ModuleLoader and Typert package identities.

@@ -40,3 +40,14 @@ it("routes identical note paths through the source locator Vault for refresh, di
 it("reference handoff cannot commit into a new binding after Core add",async()=>{
  const f=fixture();await f.runtime.reconcile([vault("a")]);const commit=vi.fn();const input=f.runtime.guardHandoff({sessionId:"s",operationId:"o",vaultId:"a",assertCurrent(){},prepare:async()=>({referenceId:"ref",source:{sourceType:"obsidian-note",locator:{vaultId:"a"}} as never}),commit});await input.prepare();await f.runtime.reconcile([vault("a",2)]);await expect(input.commit({referenceId:"ref",setId:"set"})).rejects.toThrow("binding changed");expect(commit).not.toHaveBeenCalled();await f.runtime.dispose();
 });
+
+it('folder binding pins publisher and boot across path proof and the final control request',async()=>{
+ const f=fixture();const selected=vault('a',0,'');await f.runtime.reconcile([selected]);
+ const probe=vi.spyOn(f.runtime,'probe');probe.mockResolvedValue({...selected,publisherId:crypto.randomUUID()});
+ const request={operationId:'fixture-op',expectedRevision:0,intent:'bind' as const,target:{instanceId:identity.instanceId,profileId:identity.profileId},candidate:{origin:identity.origin,bootId:identity.bootId}};
+ await expect(f.runtime.changeVaultBinding('a',request,{identity:selected,signal:new AbortController().signal})).rejects.toThrow('candidate identity changed');
+ const next={...selected,bootId:crypto.randomUUID()};await f.runtime.reconcile([next]);probe.mockResolvedValue(next);
+ await expect(f.runtime.changeVaultBinding('a',request,{identity:selected,signal:new AbortController().signal})).rejects.toThrow('所选 Vault 在线身份已改变');
+ const abort=new AbortController();abort.abort();probe.mockClear();
+ await expect(f.runtime.changeVaultBinding('a',request,{identity:next,signal:abort.signal})).rejects.toThrow();expect(probe).not.toHaveBeenCalled();await f.runtime.dispose();
+});

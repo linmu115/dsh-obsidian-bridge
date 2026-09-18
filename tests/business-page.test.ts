@@ -19,3 +19,19 @@ it('projects binding status and forwards owner-checked CAS without becoming a bi
  expect(change).toHaveBeenCalledTimes(1);un();expect(dispose).toHaveBeenCalledOnce();
  expect(()=>registerBridgeBusinessPage({...service,identity:{instanceId:'other',profileId:'web'}},{} as never,identity)).toThrow('identity mismatch');
 });
+
+it('offers an owner-checked fieldless folder action even with no discovered Vaults',async()=>{
+ let provider!:Parameters<BusinessPageService['register']>[0];
+ const identity={instanceId:'instance',profileId:'web',origin:'http://127.0.0.1:3000',bootId:crypto.randomUUID()} as DshInstanceIdentity;
+ const bindSelectedFolder=vi.fn(async()=>({message:'已取消选择，绑定未改变'}));
+ registerBridgeBusinessPage({identity,register:value=>{provider=value;return()=>{};}},{listVaults:()=>[]} as never,identity,{bindSelectedFolder});
+ const snapshot=await provider.snapshot();const section=snapshot.sections.find(section=>section.kind==='actions');
+ expect(section?.kind==='actions'&&section.actions[0]).toEqual({id:'select-folder-and-bind',label:'选择文件夹并绑定',expectedRevision:0,fields:[]});
+ const request={owner:{...identity,namespace:'obsidian-bridge',providerId:'vault-bindings'},operationId:crypto.randomUUID(),actionId:'select-folder-and-bind',expectedRevision:0,input:{}};
+ const signal=new AbortController().signal;await provider.handleAction(request,signal);
+ expect(bindSelectedFolder).toHaveBeenCalledWith(request.operationId,signal);
+ await expect(provider.handleAction({...request,input:{path:'do not accept browser paths'}},signal)).rejects.toThrow('动作无效');
+ await expect(provider.handleAction({...request,expectedRevision:1},signal)).rejects.toThrow('动作无效');
+ await expect(provider.handleAction({...request,owner:{...request.owner,profileId:'other'}},signal)).rejects.toThrow('当前实例');
+ expect(bindSelectedFolder).toHaveBeenCalledOnce();
+});

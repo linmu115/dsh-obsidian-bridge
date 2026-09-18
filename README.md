@@ -1,6 +1,6 @@
 # DSH Obsidian Bridge
 
-当前发布包是 **`dsh-obsidian-bridge@0.4.1-rc2.1`**，面向 DSH **0.1.5-rc.2**。一个桥插件提供实例身份、Vault 绑定、本机发现、多 Vault 连接与路由、Obsidian 来源和导航，以及桥连接管理界面。包内附带的 `cordis.patch.yml` 只加载自身一次。Protocol 已打包进入运行代码，用户无需另外安装 Lifecycle、Reference Adapter、Suite 或 Protocol。
+当前发布包是 **`dsh-obsidian-bridge@0.4.1-rc2.2`**，面向 DSH **0.1.5-rc.2**。一个桥插件提供实例身份、Vault 绑定、本机发现、多 Vault 连接与路由、Obsidian 来源和导航，以及桥连接管理界面。包内附带的 `cordis.patch.yml` 只加载自身一次。Protocol 已打包进入运行代码，用户无需另外安装 Lifecycle、Reference Adapter、Suite 或 Protocol。
 
 ## 功能组合
 
@@ -16,6 +16,8 @@ Core 管理引用状态、引用样式与 UI、气泡、上下文组织与注入
 ## 身份与绑定
 
 每个 Vault 保存自己的实例绑定。Bridge 使用持久实例身份和本机发现连接已确认的 Vault；端口变化和上线顺序不会改变归属。`bridgeOrigin` 只是手动候选，不会自动成为业务目标。首次使用在 Obsidian 设置或 Bridge 管理面板中明确绑定。
+
+Windows 上还可从 Maintenance 的「扩展 → Obsidian 系列 → 插件信息与接入」点击「选择文件夹并绑定」。选择框出现在运行当前 DSH 的 Windows 桌面，60 秒内完成选择；该 Vault 必须已安装 Bridge、在 Obsidian 中打开并启用插件。需要提供 `/discovery/v1/vault-location` 的 Companion 版本来核验在线 Vault 的实际路径。选择取消、离线、插件缺失或身份冲突均不改绑定；已绑定当前实例时无需重复写入，已绑定其他实例须使用明确的改绑入口。此操作不扫描子目录、不安装插件、不编辑 Vault 配置或笔记。
 
 配置自己的 `obsidian-bridge` 节点：
 
