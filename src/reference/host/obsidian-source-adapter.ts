@@ -39,13 +39,14 @@ function preparationError(error: unknown): ObsidianSourcePreparationError {
   return new ObsidianSourcePreparationError("online-refresh-failed", error instanceof Error ? error.message : String(error), { cause: error });
 }
 
-export function createObsidianSourceAdapter(bridge: SourceBridge): HostSourceAdapter {
+export function createObsidianSourceAdapter(defaultBridge: SourceBridge, forVault?: (vaultId:string)=>SourceBridge): HostSourceAdapter {
+  const route=(item:ReferenceItem)=>{obsidianItem(item);return forVault?.(item.locator.vaultId)??defaultBridge;};
   return {
     async prepare(item, signal) {
       obsidianItem(item);
       let result;
       try {
-        result = await bridge.refreshReference(item.referenceId, item.snapshot.documentHash, signal);
+        result = await route(item).refreshReference(item.referenceId, item.snapshot.documentHash, signal);
       } catch (error) {
         if (error instanceof BridgeUnavailableError) return offline(item);
         throw preparationError(error);
@@ -57,15 +58,16 @@ export function createObsidianSourceAdapter(bridge: SourceBridge): HostSourceAda
           : "source-changed";
         throw new ObsidianSourcePreparationError(code, `Obsidian source cannot be prepared: ${result.reason}`);
       }
+      if(result.source.locator.vaultId!==item.locator.vaultId)throw new ObsidianSourcePreparationError("protocol-mismatch","Refreshed reference changed its Vault identity");
       return { ...item, ...result.source };
     },
     async discardPending(item) {
       obsidianItem(item);
-      await bridge.discardReference(item.referenceId);
+      await route(item).discardReference(item.referenceId);
     },
     async commitBacklink(binding: SentReferenceBinding) {
       obsidianItem(binding.item);
-      return bridge.commitBacklink({
+      return route(binding.item).commitBacklink({
         annotationProtocolVersion: ANNOTATION_PROTOCOL_VERSION,
         type: "backlink-commit",
         referenceId: binding.referenceId,
@@ -79,7 +81,7 @@ export function createObsidianSourceAdapter(bridge: SourceBridge): HostSourceAda
     },
     async deleteCommitted(binding: DeletedReferenceBinding) {
       obsidianItem(binding.item);
-      await bridge.deleteCommittedReference({
+      await route(binding.item).deleteCommittedReference({
         annotationProtocolVersion: ANNOTATION_PROTOCOL_VERSION,
         type: "reference-delete-commit",
         referenceId: binding.referenceId,

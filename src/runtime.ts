@@ -27,6 +27,10 @@ export interface LifecycleRuntimeOptions {
   requestOrigin?: string;
   surfaceId?: string;
   profileId?: string;
+  vaultId?: string;
+  bindingRevision?: number;
+  dshBootId?: string;
+  dshOrigin?: string;
   pollIntervalMs?: number;
   requestTimeoutMs?: number;
   leaseTtlMs?: number;
@@ -73,6 +77,7 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
       origin: options.bridgeOrigin,
       clientId: options.clientId,
       role: options.role,
+      ...(options.vaultId === undefined ? {} : {vaultId:options.vaultId,bindingRevision:options.bindingRevision!,profileId:options.profileId!,dshBootId:options.dshBootId!,dshOrigin:options.dshOrigin!}),
       ...(options.dshInstanceId === undefined ? {} : { dshInstanceId: options.dshInstanceId }),
       ...(options.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: options.requestTimeoutMs }),
       ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
@@ -94,6 +99,7 @@ export class BridgeLifecycleRuntime implements ObsidianBridgeLifecycle {
       reason: "Bridge status has not been observed yet",
     };
     this.channel = new BridgeActionChannel(this, {
+      ...(options.vaultId === undefined ? {} : {vaultId:options.vaultId,bindingRevision:options.bindingRevision!,dshBootId:options.dshBootId!}),
       origin: this.bridgeOrigin, clientId: `${options.clientId}:actions`, role: options.role,
       ...(options.profileId === undefined ? {} : { profileId: options.profileId }),
       ...(options.dshInstanceId === undefined ? {} : { dshInstanceId: options.dshInstanceId }),

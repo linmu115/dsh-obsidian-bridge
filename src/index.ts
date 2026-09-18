@@ -1,3 +1,9 @@
+import { registerBridgeBusinessPage, type BusinessPageService } from './business-page.ts';
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { DSH_IDENTITY_PATH, type DshInstanceIdentity, type ChangeVaultBindingRequest } from "dsh-obsidian-bridge-protocol/binding";
+import { VaultBridgeRuntime } from "./vault-runtime.ts";
+import { resolveInstanceIdentity, type IdentityStorage } from "./host-identity.ts";
+import { startHostDiscovery } from "./discovery-host.ts";
 import { apply as mountReferences } from "./reference/host.ts";
 import { TypertRemoteService } from "@deepseek-ai/dsh-typert-protocol";
 import { type Context } from "@deepseek-ai/cordis";
@@ -10,18 +16,19 @@ export * from "./api.ts";
 export { BridgeLifecycleRuntime } from "./runtime.ts";
 
 export const name = "dsh-obsidian-bridge-lifecycle";
-export const inject = ["webServer", "connection"] as const;
+export const inject = ["webServer", "connection", "storageDomain"] as const;
 
 interface WebServerBinding {
   readonly host: "127.0.0.1" | "0.0.0.0";
   readonly port: number;
+  register(route:{kind:"exact";path:string;handler:(request:IncomingMessage,response:ServerResponse)=>void}):()=>void;
 }
 
 interface ConnectionBinding {
   authenticatedUrl(baseUrl: string): string;
 }
 
-export function browserOriginFromWebServer(server: WebServerBinding): string {
+export function browserOriginFromWebServer(server: Pick<WebServerBinding,"host"|"port">): string {
   if (!Number.isInteger(server.port) || server.port < 1 || server.port > 65_535) {
     throw new Error("DSH Web server has not published its listening port");
   }
@@ -30,7 +37,7 @@ export function browserOriginFromWebServer(server: WebServerBinding): string {
 }
 
 export async function waitForBrowserOrigin(
-  server: WebServerBinding,
+  server: Pick<WebServerBinding,"host"|"port">,
   timeoutMs = 10_000,
   now: () => number = Date.now,
   wait: (delayMs: number) => Promise<void> = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs)),
@@ -48,38 +55,58 @@ export async function waitForBrowserOrigin(
   }
 }
 
-export interface Config { bridgeOrigin: string; dshInstanceId?: string; profileId?: string; }
+export interface Config { bridgeOrigin: string; dshInstanceId?: string; profileId?: string; displayName?:string; discoveryDirectory?:string; }
 export const Config = s.object({
+  displayName: s.string().default(""),
+  discoveryDirectory: s.string().default(""),
   dshInstanceId: s.string().default(""),
   profileId: s.string().default("web"),
   bridgeOrigin: s.string().default("http://127.0.0.1:18473"),
 });
 
 export class BridgeLifecycleService extends TypertRemoteService implements ObsidianBridgeLifecycle {
-  private readonly runtime: BridgeLifecycleRuntime;
+  private readonly runtime: VaultBridgeRuntime;
+  private readonly discovery: ReturnType<typeof startHostDiscovery>;
   readonly runtimeIdentity: BridgeRuntimeIdentity;
 
-  constructor(ctx: Context, config: Config) {
+  constructor(ctx: Context, config: Config, readonly identity: DshInstanceIdentity) {
     super(ctx, "obsidianBridgeLifecycle");
-    this.runtimeIdentity = Object.freeze({ profileId: config.profileId || "web", ...(config.dshInstanceId ? { dshInstanceId: config.dshInstanceId } : {}) });
-    const browserOrigin = browserOriginFromWebServer((ctx as Context & { webServer: WebServerBinding }).webServer);
-    const dshViewerUrl = (ctx as Context & { connection: ConnectionBinding }).connection.authenticatedUrl(browserOrigin);
-    this.runtime = new BridgeLifecycleRuntime({
-      bridgeOrigin: config.bridgeOrigin,
-      clientId: `dsh-host-controller:${encodeURIComponent(config.dshInstanceId || browserOrigin)}`,
-      role: "controller",
-      profileId: this.runtimeIdentity.profileId,
-      ...(config.dshInstanceId ? { dshInstanceId: config.dshInstanceId } : {}),
-      browserOrigins: [browserOrigin],
-      dshViewerUrl,
-      onError: (error) => console.warn("[dsh-obsidian-bridge-lifecycle] Bridge unavailable", error),
+    this.runtimeIdentity = Object.freeze({profileId:identity.profileId,dshInstanceId:identity.instanceId});
+    const server = (ctx as Context & {webServer:WebServerBinding}).webServer;
+    const dshViewerUrl = (ctx as Context & { connection: ConnectionBinding }).connection.authenticatedUrl(identity.origin);
+    this.runtime = new VaultBridgeRuntime({identity,role:"controller",fallbackOrigin:config.bridgeOrigin,dshViewerUrl});
+    ctx.effect(()=>server.register({kind:"exact",path:DSH_IDENTITY_PATH,handler:(request,response)=>{
+      if(!["127.0.0.1","::1","::ffff:127.0.0.1"].includes(request.socket.remoteAddress??"")){response.statusCode=403;response.end();return;}
+      if(request.method!=="GET"){response.statusCode=405;response.end();return;}
+      response.setHeader("content-type","application/json");response.setHeader("cache-control","no-store");response.end(JSON.stringify(identity));
+    }}),"obsidian bridge: public identity");
+    this.discovery = startHostDiscovery(identity,this.runtime,{...(config.discoveryDirectory?{directory:config.discoveryDirectory}:{}),manualOrigin:config.bridgeOrigin,onError:error=>console.warn("[obsidian bridge] discovery unavailable",error)});
+    ctx.inject(["maintenanceInstanceIdentity"],injected=>{
+      const maintenance=injected.get("maintenanceInstanceIdentity") as {instanceId:string;profileId:string};
+      if(maintenance.instanceId!==identity.instanceId||maintenance.profileId!==identity.profileId)this.runtime.blockIdentity("Bridge and Maintenance instance identities conflict");
+    });
+    ctx.inject(["maintenanceInstanceIdentity","maintenanceKnowledge"],injected=>{
+      const maintenance=injected.get("maintenanceInstanceIdentity") as {instanceId:string;profileId:string};
+      if(maintenance.instanceId!==identity.instanceId||maintenance.profileId!==identity.profileId)return;
+      identity.capabilities=[...new Set([...identity.capabilities,"maintenance-knowledge-v1"])];
+      void this.discovery.refresh();
+      injected.effect(()=>()=>{identity.capabilities=identity.capabilities.filter(value=>value!=="maintenance-knowledge-v1");void this.discovery.refresh();},"obsidian bridge: optional maintenance knowledge");
+    });
+    ctx.inject(["maintenanceBusinessPages"], injected => {
+      const pages = injected.get("maintenanceBusinessPages") as BusinessPageService;
+      if(pages.identity.instanceId!==identity.instanceId||pages.identity.profileId!==identity.profileId)return;
+      injected.effect(()=>registerBridgeBusinessPage(pages,this,identity),"obsidian bridge: maintenance business page");
     });
     ctx.inject(["annotationCoreHost"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0], { profileId: this.runtimeIdentity.profileId }));
-    this.runtime.start();
-    ctx.effect(() => () => this.runtime.dispose(), "dsh-obsidian-bridge-lifecycle: host");
+    ctx.effect(() => async () => {try{await this.discovery.dispose();}finally{await this.runtime.dispose();}}, "dsh-obsidian-bridge-lifecycle: host");
   }
 
-  getBridgeConfig(): { origin: string; runtimeIdentity: BridgeRuntimeIdentity } { return { origin: this.runtime.bridgeOrigin, runtimeIdentity: this.runtimeIdentity }; }
+  getInstanceIdentity=()=>this.identity;
+  getBridgeConfig() { return {origin:this.runtime.bridgeOrigin,runtimeIdentity:this.runtimeIdentity,identity:this.identity,vaults:this.runtime.identities()}; }
+  forVault=(vaultId:string)=>this.runtime.forVault(vaultId);
+  listVaults=()=>this.runtime.listVaults();
+  refreshVaults=()=>this.discovery.refresh();
+  changeVaultBinding=async(vaultId:string,input:ChangeVaultBindingRequest)=>{const result=await this.runtime.changeVaultBinding(vaultId,input);await this.discovery.refresh();return result;};
   get capabilities() { return this.runtime.capabilities; }
   get transport() { return this.runtime.transport; }
   registerActionHandler: NonNullable<ObsidianBridgeLifecycle["registerActionHandler"]> = (name, handler) => this.runtime.registerActionHandler(name, handler);
@@ -102,6 +129,12 @@ export function apply(ctx: Context, config: Config): void {
     const server = (injected as Context & { webServer: WebServerBinding }).webServer;
     await waitForBrowserOrigin(server, 10_000, Date.now, undefined, abort.signal);
     abort.signal.throwIfAborted();
-    new BridgeLifecycleService(injected, config);
+    const identity = await resolveInstanceIdentity({configuredId:config.dshInstanceId||"",profileId:config.profileId||"web",origin:browserOriginFromWebServer(server),
+      storage:injected.get("storageDomain") as IdentityStorage,
+      ...(injected.get("maintenanceInstanceIdentity")?{maintenance:injected.get("maintenanceInstanceIdentity") as {instanceId:string;profileId:string}}:{}),
+      displayName:config.displayName||process.env.DSH_LAUNCHER_INSTANCE||"DSH"});
+    if(abort.signal.aborted){await identity.dispose();abort.signal.throwIfAborted();}
+    injected.effect(()=>identity.dispose,"obsidian bridge: identity domain");
+    new BridgeLifecycleService(injected, config, identity.identity);
   });
 }

@@ -1,3 +1,4 @@
+import { vaultBindingSnapshotSchema, type ChangeVaultBindingRequest, type VaultBindingSnapshot } from "dsh-obsidian-bridge-protocol/binding";
 import { createRequestScope } from "./request-scope.ts";
 import {
   BRIDGE_LIFECYCLE_PROTOCOL_VERSION,
@@ -17,6 +18,11 @@ export interface BridgeControlClientOptions {
   clientId: string;
   role: BridgeClientRole;
   dshInstanceId?: string;
+  vaultId?: string;
+  bindingRevision?: number;
+  dshBootId?: string;
+  profileId?: string;
+  dshOrigin?: string;
   fetch?: typeof globalThis.fetch;
   requestOrigin?: string;
   requestTimeoutMs?: number;
@@ -25,6 +31,7 @@ export interface BridgeControlClientOptions {
 export interface BridgeControlClient {
   readonly origin: string;
   status(): Promise<BridgeStatus>;
+  changeBinding(input: ChangeVaultBindingRequest): Promise<VaultBindingSnapshot>;
   acquireLease(ttlMs: number, browserOrigins: readonly string[], dshViewerUrl?: string): Promise<BridgeLease>;
   renewLease(ttlMs: number, browserOrigins: readonly string[], dshViewerUrl?: string): Promise<BridgeLease>;
   releaseLease(): Promise<void>;
@@ -89,12 +96,14 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
         role: options.role,
         ...(options.dshInstanceId === undefined ? {} : { dshInstanceId: options.dshInstanceId }),
         ...(bootId === undefined ? {} : { expectedBootId: bootId }),
+        ...bindingFields(options),
       }),
     }, false);
     const result = bridgeControlHandshakeResponseSchema.parse(raw);
     if ((bootId !== undefined && result.bootId !== bootId) || result.clientId !== options.clientId || result.role !== options.role) {
       throw new Error("Bridge control handshake identity changed");
     }
+    if(options.vaultId!==undefined&&(result.vaultId!==options.vaultId||result.bindingRevision!==options.bindingRevision||result.profileId!==options.profileId||result.dshBootId!==options.dshBootId))throw new Error("Bridge binding handshake identity changed");
     token = result.token;
     tokenExpiresAt = result.tokenExpiresAt;
     bootId = result.bootId;
@@ -112,6 +121,7 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
 
   return {
     origin,
+    async changeBinding(input) { return vaultBindingSnapshotSchema.parse(await request("/control/v1/binding", {method:"POST", body:JSON.stringify(input)})); },
     status,
     async acquireLease(ttlMs, browserOrigins, dshViewerUrl) {
       if (bootId === undefined) await status();
@@ -120,6 +130,7 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
         lifecycleProtocolVersion: BRIDGE_LIFECYCLE_PROTOCOL_VERSION,
         expectedBootId: bootId,
         ttlMs,
+        ...bindingFields(options),
         browserOrigins: [...browserOrigins],
         ...(dshViewerUrl === undefined ? {} : { dshViewerUrl }),
       });
@@ -135,6 +146,7 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
         lifecycleProtocolVersion: BRIDGE_LIFECYCLE_PROTOCOL_VERSION,
         expectedBootId: lease.bootId,
         ttlMs,
+        ...bindingFields(options),
         browserOrigins: [...browserOrigins],
         ...(dshViewerUrl === undefined ? {} : { dshViewerUrl }),
       });
@@ -185,4 +197,8 @@ export function createBridgeControlClient(options: BridgeControlClientOptions): 
       return disposing;
     },
   };
+}
+
+export function bindingFields(options: {vaultId?:string;bindingRevision?:number;dshBootId?:string;profileId?:string;dshOrigin?:string}) {
+ return options.vaultId === undefined ? {} : {bindingProtocolVersion:1 as const,vaultId:options.vaultId,bindingRevision:options.bindingRevision,dshBootId:options.dshBootId,profileId:options.profileId,dshOrigin:options.dshOrigin};
 }

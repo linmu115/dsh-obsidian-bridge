@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge-lifecycle",
-  "version": "0.4.0-rc2.1",
+  "version": "0.4.0-rc2.2",
   "description": "Cordis lifecycle controller for the external Obsidian DeepHarness Bridge.",
   "type": "module",
   "license": "MIT",
@@ -50,7 +50,7 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
     "@deepseek-ai/schemastery": "*",
-    "dsh-obsidian-bridge-protocol": "0.3.3-rc2.1",
+    "dsh-obsidian-bridge-protocol": "0.4.0-rc2.1",
     "dsh-annotation-core": "0.3.11-rc2.2 || 0.3.12-rc2.1 || 0.3.12-rc2.2 || 0.3.12-rc2.3 || 0.3.12-rc2.4 || 0.3.12-rc2.5 || 0.3.12-rc2.6 || 0.3.12-rc2.7 || 0.3.12-rc2.8 || 0.3.12-rc2.9 || 0.3.12-rc2.10 || 0.3.12-rc2.11 || 0.3.12-rc2.12 || 0.3.12-rc2.19",
     "@deepseek-ai/dsh-typert-protocol": "0.1.5-rc.2",
     "react": "^18.2.0"
@@ -79,7 +79,7 @@
     "@deepseek-ai/cordis": "4.0.2",
     "@deepseek-ai/schemastery": "3.18.2",
     "@types/node": "^24.3.0",
-    "dsh-obsidian-bridge-protocol": "file:C:/Users/19717/OneDrive/文档/ChatGPT/dsh/.artifacts/rc2-profile-candidate/dsh-obsidian-bridge-protocol-0.3.3-rc2.1.tgz",
+    "dsh-obsidian-bridge-protocol": "link:../../rc2-adapt-20260912/dsh-obsidian-bridge-protocol",
     "tsdown": "^0.22.14",
     "typescript": "^5.9.3",
     "unrun": "^0.3.1",

@@ -1,3 +1,5 @@
+import { VaultBridgeRuntime } from "./vault-runtime.ts";
+import type {ChangeVaultBindingRequest} from "dsh-obsidian-bridge-protocol/binding";
 import { registerBridgeHealth } from "./health-panel.tsx";
 import { bridgeSurfaceIdFromUrl } from "./transport.ts";
 import { handoffReference } from "./reference/handoff.ts";
@@ -12,32 +14,39 @@ import { BridgeLifecycleRuntime } from "./runtime.ts";
 export const inject = ["remote"] as const;
 
 class BridgeLifecycleClientService extends Service implements ObsidianBridgeLifecycle {
-  private readonly runtime: BridgeLifecycleRuntime;
+  private readonly runtime: VaultBridgeRuntime;
+  readonly runtimeIdentity: BridgeRuntimeIdentity;
 
-  constructor(private readonly owner: Context, origin: string, readonly runtimeIdentity: BridgeRuntimeIdentity = { profileId: "web" }) {
+  constructor(private readonly owner: Context, private readonly config:Awaited<ReturnType<typeof mountBridgeConfig>>) {
     super(owner, "obsidianBridgeLifecycle");
     const ctx = owner;
     const requestOrigin = typeof location === "undefined" ? undefined : location.origin;
-    this.runtime = new BridgeLifecycleRuntime({
-      bridgeOrigin: origin,
-      clientId: `dsh-web-surface-${crypto.randomUUID()}`,
-      role: "surface",
-      ...runtimeIdentity,
+    if(!config.identity)throw new Error("Host Bridge does not provide a persistent instance identity");
+    this.runtimeIdentity={profileId:config.identity.profileId,dshInstanceId:config.identity.instanceId};
+    this.runtime = new VaultBridgeRuntime({identity:config.identity,fallbackOrigin:config.origin,role:"surface",
       ...(typeof location === "undefined" || !bridgeSurfaceIdFromUrl(location.href) ? {} : { surfaceId: bridgeSurfaceIdFromUrl(location.href)! }),
       ...(requestOrigin === undefined ? {} : { requestOrigin }),
-      onError: (error) => console.warn("[dsh-obsidian-bridge-lifecycle] Bridge unavailable", error),
     });
+    void this.runtime.reconcile(config.vaults??[]);
+    let stopped=false;let timer:ReturnType<typeof setTimeout>|undefined;
+    const refresh=async()=>{try{await this.refreshVaults();}catch{await this.runtime.reconcile([]);}finally{if(!stopped)timer=setTimeout(()=>{void refresh();},5000);}};
+    timer=setTimeout(()=>{void refresh();},5000);
+    ctx.effect(()=>()=>{stopped=true;if(timer)clearTimeout(timer);},"obsidian bridge: surface routes");
     ctx.inject(["sessions", "annotationCore"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0]));
     registerBridgeHealth(ctx as unknown as Parameters<typeof registerBridgeHealth>[0], this);
-    this.runtime.start();
     ctx.effect(() => () => this.runtime.dispose(), "dsh-obsidian-bridge-lifecycle: client");
   }
 
   handoffReference: NonNullable<ObsidianBridgeLifecycle["handoffReference"]> = input => {
     const sessions = this.owner.get("sessions" as never) as { scope?(id: string): { get(name: string): unknown } | undefined } | undefined;
     const core = (sessions?.scope?.(input.sessionId)?.get("annotationCore") ?? this.owner.get("annotationCore" as never)) as AnnotationCoreClient | undefined;
-    return handoffReference(core, input);
+    return handoffReference(core, this.runtime.guardHandoff(input));
   };
+  getInstanceIdentity=()=>this.config.identity!;
+  forVault=(vaultId:string)=>this.runtime.forVault(vaultId);
+  listVaults=()=>this.runtime.listVaults();
+  refreshVaults=async()=>{const fresh=await this.config.refresh();if(fresh.identity?.bootId!==this.config.identity?.bootId)throw new Error("Host Bridge boot changed; reload the viewer");await this.runtime.reconcile(fresh.vaults??[]);};
+  changeVaultBinding=async(vaultId:string,input:ChangeVaultBindingRequest)=>{const result=await this.config.changeBinding(vaultId,input);await this.refreshVaults();return result;};
   get capabilities() { return this.runtime.capabilities; }
   get transport() { return this.runtime.transport; }
   registerActionHandler: NonNullable<ObsidianBridgeLifecycle["registerActionHandler"]> = (name, handler) => this.runtime.registerActionHandler(name, handler);
@@ -59,7 +68,7 @@ export async function apply(ctx: Context): Promise<void> {
   const config = await mountBridgeConfig(ctx);
   try {
     abort.signal.throwIfAborted();
-    new BridgeLifecycleClientService(ctx, config.origin, config.runtimeIdentity);
+    new BridgeLifecycleClientService(ctx, config);
     ctx.effect(() => config.dispose, "dsh-obsidian-bridge-lifecycle: client remote");
   } catch (error) {
     await config.dispose();

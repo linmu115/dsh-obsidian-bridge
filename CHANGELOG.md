@@ -1,5 +1,11 @@
 ## 0.4.0-rc2.1 — 2026-09-18
 
+## 0.4.0-rc2.2 — 2026-09-18
+
+- Persist DSH instance identity, discover local Vault candidates, and route independent bound runtimes by Vault identity/revision/boot.
+- Keep source transactions and queue ownership in the integrated Bridge; preserve Core compensation and optional Maintenance availability checks.
+- Add binding controls to the Bridge health panel and an optional Maintenance business page using the Companion CAS writer.
+
 Consolidate existing reference transport, sources, delivery, navigation and health into Bridge; provide borrowed transport, action registration and Core-compensated handoff.
 
 See [integration report](docs/changes/2026-09-18-bridge-consolidation.md).

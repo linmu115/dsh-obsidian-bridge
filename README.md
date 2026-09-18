@@ -1,5 +1,11 @@
 > Phase 1 integration (2026-09-18): `dsh-obsidian-bridge-lifecycle@0.4.0-rc2.1` now owns the existing Obsidian reference channel, shared action queue, and connection health UI. The supported Suite runtime is Core + Bridge + Sticker. `dsh-obsidian-reference-adapter@0.3.5-rc2.1` is a guarded compatibility shell and must not be configured as an independent receiver. See `docs/changes/2026-09-18-bridge-consolidation.md` for ownership and validation.
 
+## 0.4.0-rc2.2：显式 Vault 绑定与多 Vault 路由
+
+每个 Vault 保存自己的实例绑定。Bridge 使用持久实例身份与本机发现连接已确认的 Vault；端口变化和上线顺序不会改变归属。多个 Vault 时，业务调用通过 `forVault(vaultId)` 指定目标；引用继续由 Core 管理事务。Obsidian 面板提供绑定状态和操作；安装 Maintenance 时也可从对应业务页管理。未安装 Core 或 Maintenance 时，连接与绑定仍可使用。
+
+默认 `bridgeOrigin` 只是手动候选。首次使用须明确绑定；它不会自动成为业务目标。详情见 [实现与验证报告](docs/changes/2026-09-18-vault-binding-routing.md)。
+
 # DSH Obsidian Bridge Lifecycle
 
 本补丁配套 Annotation Core **0.3.12-rc2.12**，跨会话引用选择器使用 DSH 会话栏的可读标题。见[组合兼容说明](docs/changes/2026-09-15-picker-title-cohort.md)。

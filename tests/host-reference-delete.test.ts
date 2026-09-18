@@ -44,6 +44,7 @@ async function sourceFixture() {
       });
       return;
     }
+    if (request.url === "/maintenance-knowledge/api/session-availability") { respond(200,{logicalSessionId:"logical-session-1",status:"available"});return;}
     if (request.url === "/dsh-session-maintenance/api") {
       respond(200, { referenceResolution: { status: "resolved", nativeSessionId: "session-1", logicalSessionId: "logical-session-1" } }); return;
     }

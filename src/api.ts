@@ -1,3 +1,4 @@
+import type { VaultIdentity, VaultBindingSnapshot, ChangeVaultBindingRequest, DshInstanceIdentity } from "dsh-obsidian-bridge-protocol/binding";
 import type { BridgeHttpClient, BridgeAction } from "./transport.ts";
 import type { AnnotationCoreClient } from "dsh-annotation-core/client-api";
 import type {} from "@deepseek-ai/cordis";
@@ -7,6 +8,7 @@ export type BridgeAttachmentDisposer = () => void | Promise<void>;
 export type ReadyBridgeStatus = BridgeStatus & { state: "READY" | "DEGRADED" };
 export type BridgeAttachmentMount = (
   status: ReadyBridgeStatus,
+  route?: BridgeActionRoute,
 ) => void | BridgeAttachmentDisposer | Promise<void | BridgeAttachmentDisposer>;
 
 export interface BridgeComponentHealth {
@@ -18,6 +20,7 @@ export interface BridgeLifecycleHealth {
   state: ObservedBridgeStatus["state"];
   bridgeOrigin: string;
   components: Readonly<Record<string, BridgeComponentHealth>>;
+  vaults?: readonly VaultConnectionSnapshot[];
 }
 export interface BridgeHealthSource {
   getHealth(): BridgeComponentHealth;
@@ -28,12 +31,19 @@ export interface BridgeRuntimeIdentity { readonly dshInstanceId?: string; readon
 
 export type BorrowedBridgeTransport = Omit<BridgeHttpClient, "dispose" | "nextActions" | "acknowledgeDeepLink" | "acknowledgeAction">;
 export type BridgeDeliveryOutcome = "handled" | "retry" | "ignored" | "cancelled";
+export interface VaultConnectionSnapshot {
+  vaultId: string; displayName: string; origin: string; binding: VaultBindingSnapshot;
+  state: "bound" | "available" | "foreign" | "offline" | "conflict"; lastError?: string; connectionState?:ObservedBridgeStatus["state"];
+}
+export interface BridgeActionRoute { vaultId: string; bindingRevision: number; transport: BorrowedBridgeTransport; }
+export interface BridgeConfiguration { origin: string; runtimeIdentity?: BridgeRuntimeIdentity; identity?: DshInstanceIdentity; vaults?: VaultIdentity[]; }
 export interface BridgeActionHandler {
   accepts(action: BridgeAction): boolean;
-  handle(action: BridgeAction, signal: AbortSignal): Promise<BridgeDeliveryOutcome | boolean>;
+  handle(action: BridgeAction, signal: AbortSignal, route?: BridgeActionRoute): Promise<BridgeDeliveryOutcome | boolean>;
 }
 export interface ReferenceHandoffResult { setId: string; referenceId: string; }
 export interface ReferenceHandoffInput {
+  vaultId?: string;
   sessionId: string;
   operationId: string;
   prepare(): Promise<{ referenceId: string; source: Parameters<AnnotationCoreClient["addReference"]>[1] }>;
@@ -41,6 +51,11 @@ export interface ReferenceHandoffInput {
   assertCurrent(): void;
 }
 export interface ObsidianBridgeLifecycle {
+  getInstanceIdentity?(): DshInstanceIdentity;
+  forVault?(vaultId: string): BorrowedBridgeTransport;
+  listVaults?(): readonly VaultConnectionSnapshot[];
+  changeVaultBinding?(vaultId: string, request: ChangeVaultBindingRequest): Promise<VaultBindingSnapshot>;
+  refreshVaults?(): Promise<void>;
   readonly capabilities?: readonly string[];
   readonly transport?: BorrowedBridgeTransport;
   registerActionHandler?(name: string, handler: BridgeActionHandler): () => void;
@@ -63,3 +78,5 @@ declare module "@deepseek-ai/cordis" {
     obsidianBridgeLifecycle: ObsidianBridgeLifecycle;
   }
 }
+
+export { assertSessionAvailable, assertMaintenanceSessionAvailable } from "./session-availability.ts";

@@ -1,9 +1,9 @@
 import type { UserConfig } from "tsdown";
 
-const protocol = ["dsh-obsidian-bridge-protocol", "dsh-obsidian-bridge-protocol/data", "dsh-annotation-core/protocol", "zod"];
+const protocol = ["dsh-obsidian-bridge-protocol", "dsh-obsidian-bridge-protocol/data", "dsh-obsidian-bridge-protocol/binding", "dsh-annotation-core/protocol", "zod"];
 
 export default [
-  { entry: { transport: "src/transport.ts" }, outDir: "lib", format: "esm", platform: "neutral", target: "es2023", fixedExtension: false, dts: false, clean: false, deps: { neverBundle: ["dsh-annotation-core/protocol", "dsh-obsidian-bridge-protocol/data", "zod"] } },
+  { entry: { transport: "src/transport.ts" }, outDir: "lib", format: "esm", platform: "neutral", target: "es2023", fixedExtension: false, dts: false, clean: false, deps: { neverBundle: ["dsh-annotation-core/protocol", "dsh-obsidian-bridge-protocol/data", "dsh-obsidian-bridge-protocol/binding", "zod"] } },
   {
     entry: { index: "src/index.ts", api: "src/api.ts", typert: "src/typert.ts" },
     outDir: "lib",
@@ -13,7 +13,7 @@ export default [
     fixedExtension: false,
     dts: false,
     clean: false,
-    deps: { alwaysBundle: protocol },
+    deps: { alwaysBundle: [...protocol, "dsh-obsidian-bridge-protocol/discovery"] },
   },
   {
     entry: { client: "src/client.ts" },

@@ -61,6 +61,10 @@ export interface BridgeHttpClientOptions {
   clientId?: string;
   surfaceId?: string;
   dshInstanceId?: string;
+  vaultId?: string;
+  bindingRevision?: number;
+  dshBootId?: string;
+  profileId?: string;
   requestOrigin?: string;
   requestTimeoutMs?: number;
 }
@@ -93,6 +97,7 @@ function stickerBacklinkTarget(sticker: StickerRecord): Record<string, string> {
     anchorId: sticker.anchorId,
     quoteHash: sticker.quoteHash,
   };
+  if (sticker.vaultId !== undefined) target.vaultId = sticker.vaultId;
   for (const key of Object.keys(stableLogicalTargetShape) as (keyof typeof stableLogicalTargetShape)[]) {
     const value = sticker[key];
     if (value !== undefined) target[key] = value;
@@ -153,6 +158,7 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
     "backlink-commit-v2",
     "reference-delete-v2",
     "sticker-backlink-delete-v1",
+    ...(options.vaultId === undefined ? [] : ["vault-instance-binding-v1"]),
     ...(surfaceId === undefined ? [] : ["targeted-deep-link-v1"]),
     ...(options.dshInstanceId === undefined ? [] : ["instance-routing-v1"]),
   ];
@@ -178,7 +184,7 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
     const response = await request("/v2/handshake", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ clientId, ...(options.dshInstanceId === undefined ? {} : { dshInstanceId: options.dshInstanceId }), ...(surfaceId === undefined ? {} : { surfaceId }) }),
+      body: JSON.stringify({ clientId, ...(options.dshInstanceId === undefined ? {} : { dshInstanceId: options.dshInstanceId }), ...(surfaceId === undefined ? {} : { surfaceId }), ...(options.vaultId === undefined ? {} : {bindingProtocolVersion:1,vaultId:options.vaultId,bindingRevision:options.bindingRevision,profileId:options.profileId,dshBootId:options.dshBootId}) }),
       ...(signal === undefined ? {} : { signal }),
     });
     if (!response.ok) throw await responseError(response);
@@ -191,6 +197,7 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
       surfaceId?: unknown;
       dshInstanceId?: unknown;
       capabilities?: unknown;
+      vaultId?: unknown; bindingRevision?: unknown; profileId?: unknown; dshBootId?: unknown;
     };
     const capabilities = Array.isArray(body.capabilities) ? body.capabilities : [];
     if (
@@ -199,6 +206,7 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
       || body.stickerProtocolVersion !== STICKER_PROTOCOL_VERSION
       || body.bridgeOrigin !== origin
       || (options.dshInstanceId !== undefined && body.dshInstanceId !== options.dshInstanceId)
+      || (options.vaultId !== undefined && (body.vaultId !== options.vaultId || body.bindingRevision !== options.bindingRevision || body.profileId !== options.profileId || body.dshBootId !== options.dshBootId))
       || (surfaceId !== undefined && body.surfaceId !== surfaceId)
       || !requiredCapabilities.every((item) => capabilities.includes(item))
     ) {
@@ -331,9 +339,11 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
       const response = await authenticated(`/v1/session-notes/${encodeURIComponent(sessionId)}`);
       const message = parseBridgeMessage(await response.json());
       if (message.type !== "session-note") throw new Error("Bridge did not return a session note");
-      return message;
+      if (options.vaultId && message.vaultId && message.vaultId !== options.vaultId) throw new Error("Session note Vault mismatch");
+      return options.vaultId ? {...message,vaultId:options.vaultId} : message;
     },
     async saveSessionNote(document, expectedRevision) {
+      if (options.vaultId && document.vaultId && document.vaultId !== options.vaultId) throw new Error("Session note Vault mismatch");
       const response = await authenticated(`/v1/session-notes/${encodeURIComponent(document.sessionId)}`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
@@ -344,6 +354,7 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
       return { revision: body.revision };
     },
     async openNote(action) {
+      if (options.vaultId && action.vaultId && action.vaultId !== options.vaultId) throw new Error("Open note Vault mismatch");
       await post("/v2/obsidian/open-note", action);
     },
     async listBacklinks(sticker) {
@@ -353,6 +364,7 @@ export function createBridgeHttpClient(options: BridgeHttpClientOptions): Bridge
       return stickerBacklinkSchema.array().parse(body.backlinks);
     },
     async deleteStickerBacklinks(sticker) {
+      if (options.vaultId && sticker.vaultId && sticker.vaultId !== options.vaultId) throw new Error("Sticker backlink Vault mismatch");
       const response = await post("/v1/sticker-backlinks/delete", stickerBacklinkTarget(sticker));
       return stickerBacklinkDeleteResultSchema.parse(await response.json());
     },
