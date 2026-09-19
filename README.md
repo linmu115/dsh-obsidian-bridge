@@ -1,6 +1,6 @@
 # DSH Obsidian Bridge
 
-当前发布包是 **`dsh-obsidian-bridge@0.4.1-rc2.2`**，面向 DSH **0.1.5-rc.2**。一个桥插件提供实例身份、Vault 绑定、本机发现、多 Vault 连接与路由、Obsidian 来源和导航，以及桥连接管理界面。包内附带的 `cordis.patch.yml` 只加载自身一次。Protocol 已打包进入运行代码，用户无需另外安装 Lifecycle、Reference Adapter、Suite 或 Protocol。
+当前源码候选包是 **`dsh-obsidian-bridge@0.4.1-rc2.3`**，面向 DSH **0.1.5-rc.2**；2026-09-18 已与 Sticker 0.7.4-rc2.5 安装到本机 RC2/web，live 插件 active、操作 skill 目录已核验；Agent 实际工具调用尚未验收。一个桥插件提供实例身份、Vault 绑定、本机发现、多 Vault 连接与路由、Obsidian 来源和导航、桥连接管理，以及新增的绑定 Vault CLI 操作。包内附带的 `cordis.patch.yml` 只加载自身一次。Protocol 已打包进入运行代码，用户无需另外安装 Lifecycle、Reference Adapter、Suite 或 Protocol。
 
 ## 功能组合
 
@@ -37,15 +37,17 @@ Obsidian 的待处理引用只由匹配目标 Viewer 的页面领取，独立 DS
 
 ## 从旧组合迁移
 
+新增操作 skill `obsidian-bound-vault` 和三个 DSH 工具 `dsh_obsidian_guide`、`dsh_obsidian_targets`、`dsh_obsidian_cli`，在相应宿主服务可用时注册。CLI 是操作工具的必需执行条件，缺少 CLI 不影响已有引用/绑定。详见[绑定 Vault 的 CLI 操作](docs/cli-operations.md)。
+
 升级安装配置时，将旧 Suite 父组中的必要配置拆到 Core、Bridge、普通 Sticker 各自独立的节点，每个插件仅一份。新的桥节点名为 `dsh-obsidian-bridge`，节点 ID 为 `obsidian-bridge`；移除旧 Suite、Lifecycle 和独立 Reference Adapter 的运行节点与包依赖。不要同时启用新旧桥。
 
-保留原 `dshInstanceId`、`profileId`、存储目录和 Obsidian `data.json`。服务键 `obsidianBridgeLifecycle`、持久身份域 `dsh_obsidian_bridge_identity_v1` 和 `/obsidian-bridge/identity` 路径保持不变。旧未绑定 Vault 仍须明确绑定；旧未归属请求不会自动分配给新的绑定。仓库物理目录暂保留历史名称，不代表需要安装历史包。
+保留原 `dshInstanceId`、`profileId`、存储目录和 Obsidian `data.json`。服务键 `obsidianBridgeLifecycle`、持久身份域 `dsh_obsidian_bridge_identity_v1` 和 `/obsidian-bridge/identity` 路径保持不变。旧未绑定 Vault 仍须明确绑定；旧未归属请求不会自动分配给新的绑定。当前维护仓库为 https://github.com/linmu115/dsh-obsidian-bridge ，旧 Lifecycle、Reference Adapter、Protocol 与 Suite 仓库停止维护。
 
 ## 开发接口与构建
 
 公开入口：`dsh-obsidian-bridge/api`、`/transport`、`/typert`、`/protocol`、`/protocol/data`、`/protocol/binding`。后三个协议入口和 transport 可在浏览器构建中使用；Node 发现逻辑仅在桥宿主内部。消费者应使用导出路径，不引用内部 `dist` 或旧 `lib` 文件名。
 
-Protocol 和 Core 协议源是开发依赖；运行 JS 和所需公共声明已打包。发布清单只包含 `dist`、单节点补丁及文档，不包含旧 `lib`。源码开发链接仍可指向物理目录 `../dsh-obsidian-bridge-lifecycle`。
+Protocol 和 Core 协议源是开发依赖；运行 JS 和所需公共声明已打包。发布清单只包含 `dist`、单节点补丁及文档，不包含旧 `lib`。Protocol 源码现位于 `vendor/protocol`；Core 开发 SDK 固定于 `vendor/core-sdk`，来源见 [开发依赖说明](vendor/README.md)。
 
 在已经配置本地源码依赖的仓库中验证：
 
@@ -56,3 +58,22 @@ node node_modules/vitest/vitest.mjs run
 ```
 
 详细验证与限制见 [单桥发布报告](docs/changes/2026-09-18-single-bridge-package.md)；多 Vault 机制见 [绑定与路由报告](docs/changes/2026-09-18-vault-binding-routing.md)。真实实例安装与 Vault 验收需要独立执行，本次源码发布调整没有修改真实配置。
+
+## 独立仓库开发
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm build
+pnpm typecheck
+```
+
+完整测试包含双端集成，需要检出并安装 Obsidian 侧仓库依赖（对应提交 `2b7d992` 或后续兼容版本），使用其源码目录：
+
+```powershell
+$env:DSH_OBSIDIAN_COMPANION_SOURCE = '<obsidian-deepharness-bridge 源码绝对路径>'
+pnpm check
+```
+
+该集成测试只创建合成临时服务，不连接真实 Vault。未提供环境变量时沿用相邻的 `../obsidian-deepharness-bridge` 源码目录。
+
+仓库迁移与维护范围见 [项目地图](docs/project/map.md)。

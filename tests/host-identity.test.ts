@@ -13,7 +13,7 @@ it("prioritizes trusted config or Maintenance and diagnoses conflicts without re
 it("never uses discovery or a random transient id when persistence is absent",async()=>{await expect(resolveInstanceIdentity({profileId:"web",origin:"http://127.0.0.1:51882"})).rejects.toThrow("storageDomain");});
 
 it("uses the real RC2 domain contract and restores its durable global after facility restart",async()=>{
- const moduleUrl=new URL('../../dsh-annotation-core/node_modules/@deepseek-ai/dsh-storage-domain/lib/index.js',import.meta.url).href;
+ const moduleUrl=import.meta.resolve('@deepseek-ai/dsh-storage-domain');
  const {DomainFacility,defineDomain}=await import(moduleUrl);
  expect(defineDomain(bridgeIdentityDomainSpec)).toBe(bridgeIdentityDomainSpec);
  const directory=await mkdtemp(join(tmpdir(),'synthetic-bridge-identity-'));const file=join(directory,'identity.json');

@@ -1,0 +1,9 @@
+{
+  "schema": "project-map/v1",
+  "project_id": "e3d24f03-71bb-40ee-a66f-90e50d01f6e7",
+  "name": "DSH Obsidian Bridge",
+  "kind": "software",
+  "map": "map.md",
+  "sources": [],
+  "bindings": []
+}

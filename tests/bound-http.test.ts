@@ -1,3 +1,5 @@
+import {pathToFileURL} from "node:url";
+import {resolve} from "node:path";
 import {createServer} from "node:http";
 import type {AddressInfo} from "node:net";
 import {expect,it,vi} from "vitest";
@@ -5,9 +7,10 @@ import {VaultBridgeRuntime} from "../src/vault-runtime.ts";
 import type {DshInstanceIdentity,VaultIdentity} from "dsh-obsidian-bridge-protocol/binding";
 
 it("performs binding, independent controller leases and routed data handshakes against the Companion server",async()=>{
- // Import the sibling implementation dynamically so build declarations remain local.
- const serverModule=new URL("../../obsidian-deepharness-bridge/src/bridge/server.ts",import.meta.url).href;
- const providerModule=new URL("../../obsidian-deepharness-bridge/src/binding/provider.ts",import.meta.url).href;
+ // Full cross-project integration requires a checked-out Companion source tree.
+ const companionRoot=process.env.DSH_OBSIDIAN_COMPANION_SOURCE;
+ const serverModule=(companionRoot ? pathToFileURL(resolve(companionRoot,"src/bridge/server.ts")) : new URL("../../obsidian-deepharness-bridge/src/bridge/server.ts",import.meta.url)).href;
+ const providerModule=(companionRoot ? pathToFileURL(resolve(companionRoot,"src/binding/provider.ts")) : new URL("../../obsidian-deepharness-bridge/src/binding/provider.ts",import.meta.url)).href;
  const {startBridgeServer}=await import(serverModule);const {VaultBindingProvider}=await import(providerModule);
  let dsh:DshInstanceIdentity={discoveryProtocolVersion:1,kind:"dsh",instanceId:"instance",profileId:"web",bootId:crypto.randomUUID(),publisherId:crypto.randomUUID(),displayName:"Synthetic DSH",origin:"http://127.0.0.1:1",capabilities:["vault-instance-binding-v1"]};
  const probeServer=createServer((_request,response)=>{response.setHeader("content-type","application/json");response.end(JSON.stringify(dsh));});await new Promise<void>(resolve=>probeServer.listen(0,"127.0.0.1",resolve));dsh={...dsh,origin:`http://127.0.0.1:${(probeServer.address() as AddressInfo).port}`};
