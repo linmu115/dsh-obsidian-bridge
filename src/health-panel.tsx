@@ -50,12 +50,3 @@ export function BridgeHealthPanel({ lifecycle }: { lifecycle: ObsidianBridgeLife
     <details><summary>连接详情</summary><p>{health.bridgeOrigin}</p></details>
   </section>;
 }
-
-export function registerBridgeHealth(ctx: { inject(keys: readonly string[], callback: (ctx: unknown) => void): unknown }, lifecycle: ObsidianBridgeLifecycle): void {
-  ctx.inject(["betterSidebar"], value => {
-    const injected = value as { betterSidebar: { registerTab(tab: { id: string; title: string; order: number; single: boolean; icon(size: number): ReactNode; component(): ReactNode }): () => void }; effect(setup: () => () => void, name: string): void };
-    const unregister = injected.betterSidebar.registerTab({ id: "dsh-obsidian-bridge:health", title: "Obsidian", order: 66, single: true,
-      icon: size => <span style={{ fontSize: size }} aria-hidden="true">◎</span>, component: () => <BridgeHealthPanel lifecycle={lifecycle} /> });
-    injected.effect(() => unregister, "obsidian bridge: health panel");
-  });
-}

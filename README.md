@@ -45,6 +45,8 @@ Obsidian 的待处理引用只由匹配目标 Viewer 的页面领取，独立 DS
 
 ## 开发接口与构建
 
+Bridge 客户端不向 BetterSidebar 注册“Obsidian 连接和同步”标签页。移除该入口不影响连接、同步、绑定服务，也不改变 Maintenance 的绑定管理入口。
+
 公开入口：`dsh-obsidian-bridge/api`、`/transport`、`/typert`、`/protocol`、`/protocol/data`、`/protocol/binding`。后三个协议入口和 transport 可在浏览器构建中使用；Node 发现逻辑仅在桥宿主内部。消费者应使用导出路径，不引用内部 `dist` 或旧 `lib` 文件名。
 
 Protocol 和 Core 协议源是开发依赖；运行 JS 和所需公共声明已打包。发布清单只包含 `dist`、单节点补丁及文档，不包含旧 `lib`。Protocol 源码现位于 `vendor/protocol`；Core 开发 SDK 固定于 `vendor/core-sdk`，来源见 [开发依赖说明](vendor/README.md)。

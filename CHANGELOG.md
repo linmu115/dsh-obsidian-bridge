@@ -61,3 +61,6 @@ Complete instance scope across durable capture, authenticated Core deletion, per
 - Resolve the protocol development dependency from the public full commit
   `cfb069a5a09dacfb2e4f64a26036dfe514225132`, so a clean checkout no longer
   depends on the private sibling-worktree layout.
+## Unreleased — 2026-09-19
+
+- Remove the Bridge's “Obsidian 连接和同步” tab registration from BetterSidebar. Connection, synchronization, binding services and the optional Maintenance business page remain available.

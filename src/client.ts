@@ -1,6 +1,5 @@
 import { VaultBridgeRuntime } from "./vault-runtime.ts";
 import type {ChangeVaultBindingRequest} from "dsh-obsidian-bridge-protocol/binding";
-import { registerBridgeHealth } from "./health-panel.tsx";
 import { bridgeSurfaceIdFromUrl } from "./transport.ts";
 import { handoffReference } from "./reference/handoff.ts";
 import type { AnnotationCoreClient } from "dsh-annotation-core/client-api";
@@ -33,7 +32,6 @@ class BridgeLifecycleClientService extends Service implements ObsidianBridgeLife
     timer=setTimeout(()=>{void refresh();},5000);
     ctx.effect(()=>()=>{stopped=true;if(timer)clearTimeout(timer);},"obsidian bridge: surface routes");
     ctx.inject(["sessions", "annotationCore"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0]));
-    registerBridgeHealth(ctx as unknown as Parameters<typeof registerBridgeHealth>[0], this);
     ctx.effect(() => () => this.runtime.dispose(), "dsh-obsidian-bridge: client");
   }
 
