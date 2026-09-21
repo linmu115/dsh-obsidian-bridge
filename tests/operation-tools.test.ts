@@ -6,6 +6,21 @@ import type { ObsidianBridgeLifecycle } from '../src/api.ts';
 import type { ObsidianOperations } from '../src/operation-service.ts';
 import { obsidianOperationSkill } from '../src/operation-skill.ts';
 
+it('omits executable CLI tools when the optional CLI is absent, including managed exports', async () => {
+  const ctx = new Context(); const definitions: ToolDefinition[] = [];
+  const provider = ctx.plugin({ apply(scope) { scope.provide('tools', { register: (tool: ToolDefinition) => { definitions.push(tool); } }); } });
+  await provider.await();
+  const exportTool = vi.fn(() => () => {});
+  const managed = ctx.plugin({ apply(scope) { scope.provide('dshRuntimeSupport', { managedTools: { exportTool } }); } });
+  const owner = ctx.plugin({ inject: ['tools'], apply(scope) { registerOperationTools(scope, {} as ObsidianBridgeLifecycle); } });
+  try {
+    await managed.await(); await owner.await();
+    expect(definitions.map(tool => tool.name)).toEqual(['dsh_obsidian_guide', 'dsh_obsidian_targets']);
+    await vi.waitFor(() => expect(exportTool).toHaveBeenCalledTimes(2));
+    expect(exportTool.mock.calls.flat().some(tool => (tool as unknown as ToolDefinition)?.name === 'dsh_obsidian_cli')).toBe(false);
+  } finally { await owner.dispose(); await managed.dispose(); await provider.dispose(); }
+});
+
 it('exports the same policy-registered definitions to a late managed provider and withdraws them on unload', async () => {
   const ctx = new Context(); const definitions: ToolDefinition[] = [];
   const provider = ctx.plugin({ apply(scope) { scope.provide('tools', { register: (tool: ToolDefinition) => { definitions.push(tool); } }); } });

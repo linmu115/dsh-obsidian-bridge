@@ -1,22 +1,28 @@
+> 本批独立发布 0.4.1-rc2.8：[安装教程](../INSTALL.md)、[验证边界](../RELEASE-20260920.md)。历史版本说明按原时间阅读。
+
 # DSH Obsidian Bridge
 
-当前维护仓库：[linmu115/dsh-obsidian-bridge](https://github.com/linmu115/dsh-obsidian-bridge)。桥接层合并后的独立项目，版本 0.4.1-rc2.3，保留 Lifecycle 的提交历史及本次以前未提交的 CLI 功能。
+2026-09-20 独立运行与接入边界：[[IMP-independent-components-20260920]]。测试实例已升级 Bridge 0.4.1-rc2.7，连接管理与贴纸启动通过；独立引用接收修复与待验收范围见 [[IMP-native-reference-receive-20260920]]、[[IMP-required-consumer-startup-20260920]]。其他运行副本与历史记录按原验证范围阅读。
 
-## 边界与入口
+DSH 侧统一桥：稳定身份与 Vault 绑定、多 Vault 路由、连接与传输、Obsidian 来源接入、定位，以及绑定 Vault 的 CLI 操作。
 
-- DSH 侧单桥：身份、Vault 绑定、发现、传输、定位、引用来源与绑定 Vault CLI 操作。见 [README](../../README.md) 和 [CLI 操作](../cli-operations.md)。
-- Obsidian 侧继续维护 [obsidian-deepharness-bridge](https://github.com/linmu115/obsidian-deepharness-bridge)，迁移时对应 2b7d992；后续 Maintenance 独立绑定能力为 d162f5b / 0.7.0-rc2.4，已配套 Engine .45 安装。见 [[INT-maintenance-offline-binding]]。
-- Core 拥有引用状态、UI 和上下文；Sticker、ThoughtDAG、Maintenance 保持独立。
-- 共享 Protocol 源码在 `vendor/protocol` 继续维护。Core SDK 是固定开发快照，来源见 [vendor 说明](../../vendor/README.md)。
+## 当前入口
 
-## 被替代仓库
+- [[MOD-lifecycle|DSH Bridge：连接、引用交接与维护]]
+- [[MOD-reference|Bridge 引用接入：把 Obsidian 来源接入 Core]]
+- [[MOD-protocol|Bridge 内部 Protocol：两端共享类型与校验]]
+- [[IF-vault-binding|Bridge 绑定、发现与多 Vault 路由合同]]
+- [[IMP-obsidian-cli|绑定 Vault 的必需 CLI 与操作 skill]]
+- [[INT-maintenance-offline-binding|Maintenance 独立管理 Vault 绑定]]
 
-Lifecycle、Reference Adapter、Protocol、Session Reference Suite 四个旧仓库停止独立维护；旧仓库保留代码、许可证、历史文档和迁移说明。Suite 中的旧组合地图作为历史规格证据保留，不再代表独立安装项或活跃的桥仓库。
+## 协作项目
 
-## 验证边界
+- [Annotation Core](../../../dsh-annotation-core/docs/project/map.md)
+- [Sticker Board](../../../dsh-session-sticker-board/docs/project/map.md)
+- [Obsidian 侧 Bridge](../../../obsidian-deepharness-bridge/docs/project/map.md)
 
-本次迁移验证：新桥构建、类型检查及 157 项测试通过（包含 Protocol 和双端合成 HTTP 测试）；Obsidian 侧类型检查和 261 项测试通过。未重启、安装、改绑或操作真实笔记；真实 UI 未验收。提交、推送与归档结果以 GitHub 当前仓库状态为准。
+## 维护与历史边界
 
-本次过程：[迁移开发记录](../repository-migration-20260919.md)。
+2026-09-19 按用户要求从旧组件集合迁出有效说明，保留原记录 ID；旧组合正文已归档。[历史入口](../../../../worktrees/session-context-graph-20260913/dsh-obsidian-session-reference-suite/docs/project/map.md)保留旧版本验收与开发过程，历史测试不代表本次新增业务验收。
 
-2026-09-19 后续收尾核对：CLI 功能提交 d3b21f7 已在远端 main，无未提交 CLI 改动。本轮未改本项目运行代码；只同步 Obsidian Companion 与 Maintenance 的新接口及实际安装边界。当前绑定管理在 Maintenance 内按已登记实例执行，DSH 可以停止；CLI 业务工具仍通过运行中的 DSH 调用并沿用既有目标核验。
+[本次地图迁移过程](maintenance/map-migration-20260919.md)。本次只调整文档与阅读入口，未部署、改绑或修改用户笔记。

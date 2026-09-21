@@ -6,6 +6,7 @@ import type { AnnotationCoreClient } from "dsh-annotation-core/client-api";
 import { apply as mountReferences } from "./reference/client.ts";
 import { mountBridgeConfig } from "./client-config.ts";
 import { Service, type Context } from "@deepseek-ai/cordis";
+import { registerBridgeSettings, type BridgeSettingsSlots } from './binding-settings.tsx';
 
 import type { ObsidianBridgeLifecycle, BridgeRuntimeIdentity } from "./api.ts";
 import { BridgeLifecycleRuntime } from "./runtime.ts";
@@ -32,6 +33,9 @@ class BridgeLifecycleClientService extends Service implements ObsidianBridgeLife
     timer=setTimeout(()=>{void refresh();},5000);
     ctx.effect(()=>()=>{stopped=true;if(timer)clearTimeout(timer);},"obsidian bridge: surface routes");
     ctx.inject(["sessions", "annotationCore"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0]));
+    ctx.inject(['slots' as never], scope => {
+      scope.effect(() => registerBridgeSettings(scope.get('slots' as never) as unknown as BridgeSettingsSlots, this), 'obsidian bridge: settings');
+    });
     ctx.effect(() => () => this.runtime.dispose(), "dsh-obsidian-bridge: client");
   }
 
@@ -41,9 +45,11 @@ class BridgeLifecycleClientService extends Service implements ObsidianBridgeLife
     return handoffReference(core, this.runtime.guardHandoff(input));
   };
   getInstanceIdentity=()=>this.config.identity!;
+  getCliAvailability=()=>this.config.cli ?? { available: false };
+  hasReferenceLocationResolver=()=>this.config.referenceLocationResolverAvailable ?? true;
   forVault=(vaultId:string)=>this.runtime.forVault(vaultId);
   listVaults=()=>this.runtime.listVaults();
-  refreshVaults=async()=>{const fresh=await this.config.refresh();if(fresh.identity?.bootId!==this.config.identity?.bootId)throw new Error("Host Bridge boot changed; reload the viewer");await this.runtime.reconcile(fresh.vaults??[]);};
+  refreshVaults=async()=>{const fresh=await this.config.refresh();if(fresh.identity?.bootId!==this.config.identity?.bootId)throw new Error("Host Bridge boot changed; reload the viewer");if(fresh.cli)this.config.cli=fresh.cli;this.config.referenceLocationResolverAvailable=fresh.referenceLocationResolverAvailable ?? true;await this.runtime.reconcile(fresh.vaults??[]);};
   changeVaultBinding=async(vaultId:string,input:ChangeVaultBindingRequest)=>{const result=await this.config.changeBinding(vaultId,input);await this.refreshVaults();return result;};
   get capabilities() { return this.runtime.capabilities; }
   get transport() { return this.runtime.transport; }

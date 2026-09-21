@@ -1,19 +1,29 @@
 ---
-id: INT-maintenance-offline-binding
-kind: integration
-title: Maintenance 独立管理 Vault 绑定
-status: current
-relations:
-  - relation: depends_on
-    to:
-      project_id: 0d05f813-7097-47d9-9e88-3d523bb537d6
-      record_id: IF-offline-vault-binding
-    reason: Maintenance维护独立绑定授权合同，Obsidian桥负责唯一持久写入。
-  - relation: derived_from
-    to:
-      project_id: 0d05f813-7097-47d9-9e88-3d523bb537d6
-      record_id: HIST-offline-vault-binding
-    reason: 本次安装与推送收尾来源及验收边界。
+{
+  "id": "INT-maintenance-offline-binding",
+  "kind": "integration",
+  "title": "Maintenance 独立管理 Vault 绑定",
+  "status": "current",
+  "relations": [
+    {
+      "relation": "depends_on",
+      "to": {
+        "project_id": "0d05f813-7097-47d9-9e88-3d523bb537d6",
+        "record_id": "IF-offline-vault-binding"
+      },
+      "reason": "Maintenance维护独立绑定授权合同，Obsidian桥负责唯一持久写入。"
+    },
+    {
+      "relation": "derived_from",
+      "to": {
+        "project_id": "0d05f813-7097-47d9-9e88-3d523bb537d6",
+        "record_id": "HIST-offline-vault-binding"
+      },
+      "reason": "本次安装与推送收尾来源及验收边界。"
+    }
+  ],
+  "sources": []
+}
 ---
 
 Maintenance Engine .45 / Dashboard .1.7 提供已登记实例列表、绑定卡片、逐行解绑和本机文件夹选择。DSH 无需运行；Obsidian Vault 仍须在线并启用兼容 Companion .4。授权、CAS、幂等及路径证明合同仅在提供方 Session Maintenance 项目维护。

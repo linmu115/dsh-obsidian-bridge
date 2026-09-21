@@ -6,7 +6,7 @@ export const LIFECYCLE_REMOTE_DESCRIPTORS: readonly InvocationDescriptor[] = [{
   id: "dsh-obsidian-bridge#obsidianBridgeLifecycle/getBridgeConfig",
   service: "obsidianBridgeLifecycle", namespace: "obsidianBridgeLifecycle", method: "getBridgeConfig",
   invocation: { kind: "direct" }, parameters: [],
-  result: { mode: "strict", typeSymbol: "dsh-obsidian-bridge#BridgeConfig", schema: z.object({ origin: z.string().url(), identity:dshInstanceIdentitySchema.optional(),vaults:vaultIdentitySchema.array().optional(), runtimeIdentity: z.object({ dshInstanceId: z.string().min(1).optional(), profileId: z.string().min(1) }).strict().optional() }).strict() },
+  result: { mode: "strict", typeSymbol: "dsh-obsidian-bridge#BridgeConfig", schema: z.object({ origin: z.string().url(), referenceLocationResolverAvailable:z.boolean().optional(), identity:dshInstanceIdentitySchema.optional(),vaults:vaultIdentitySchema.array().optional(), cli:z.object({available:z.boolean(),reason:z.string().optional()}).strict().optional(), runtimeIdentity: z.object({ dshInstanceId: z.string().min(1).optional(), profileId: z.string().min(1) }).strict().optional() }).strict() },
 }, {
  id:"dsh-obsidian-bridge#obsidianBridgeLifecycle/changeVaultBinding",service:"obsidianBridgeLifecycle",namespace:"obsidianBridgeLifecycle",method:"changeVaultBinding",invocation:{kind:"direct"},
  parameters:[{name:"vaultId",wire:"vaultId",source:"json",codec:{mode:"strict",typeSymbol:"string",schema:z.string().min(1)}},{name:"input",wire:"input",source:"json",codec:{mode:"strict",typeSymbol:"dsh-obsidian-bridge#ChangeVaultBindingRequest",schema:changeVaultBindingRequestSchema}}],

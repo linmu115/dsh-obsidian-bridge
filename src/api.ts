@@ -36,7 +36,8 @@ export interface VaultConnectionSnapshot {
   state: "bound" | "available" | "foreign" | "offline" | "conflict"; lastError?: string; connectionState?:ObservedBridgeStatus["state"];
 }
 export interface BridgeActionRoute { vaultId: string; bindingRevision: number; transport: BorrowedBridgeTransport; }
-export interface BridgeConfiguration { origin: string; runtimeIdentity?: BridgeRuntimeIdentity; identity?: DshInstanceIdentity; vaults?: VaultIdentity[]; }
+export interface CliAvailability { available: boolean; reason?: string; }
+export interface BridgeConfiguration { origin: string; runtimeIdentity?: BridgeRuntimeIdentity; identity?: DshInstanceIdentity; vaults?: VaultIdentity[]; cli?: CliAvailability; referenceLocationResolverAvailable?: boolean; }
 export interface BridgeActionHandler {
   accepts(action: BridgeAction): boolean;
   handle(action: BridgeAction, signal: AbortSignal, route?: BridgeActionRoute): Promise<BridgeDeliveryOutcome | boolean>;
@@ -51,6 +52,9 @@ export interface ReferenceHandoffInput {
   assertCurrent(): void;
 }
 export interface ObsidianBridgeLifecycle {
+  /** False means native locations are used; logical-only targets still require a resolver. */
+  hasReferenceLocationResolver?(): boolean;
+  getCliAvailability?(): CliAvailability;
   getInstanceIdentity?(): DshInstanceIdentity;
   forVault?(vaultId: string): BorrowedBridgeTransport;
   listVaults?(): readonly VaultConnectionSnapshot[];

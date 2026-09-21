@@ -1,0 +1,45 @@
+{
+  "schema": "project-map/archify-delivery/v1",
+  "archify_commit": "d673e8300df60a5c8166abe78787fdc78f6b8000",
+  "source": {
+    "path": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\diagrams\\architecture.json",
+    "sha256": "3b5ea6894929b993850d99366d90a0334ffb33c939fde5d508480a19937b80b0"
+  },
+  "snapshot": "architecture.json",
+  "native_delivery": {
+    "schemaVersion": 1,
+    "ok": true,
+    "command": "deliver",
+    "type": "architecture",
+    "input": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\.map-archify-ligqno9s\\architecture.json",
+    "output": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\.map-archify-ligqno9s\\architecture.native.html",
+    "specification": {
+      "sha256": "3b5ea6894929b993850d99366d90a0334ffb33c939fde5d508480a19937b80b0",
+      "bytes": 4868
+    },
+    "artifact": {
+      "sha256": "510e6aeceec3c8ee272e351157effad4e5e9c913e6215a8c8f6aa9eac55b1365",
+      "bytes": 805356
+    },
+    "validation": {
+      "checksPassed": 9,
+      "checkCount": 9,
+      "compositionProfile": "standard",
+      "compositionStatus": "pass",
+      "errors": 0,
+      "warnings": 3
+    }
+  },
+  "canonical": {
+    "file": "architecture.native.html",
+    "sha256": "510e6aeceec3c8ee272e351157effad4e5e9c913e6215a8c8f6aa9eac55b1365",
+    "validation": "native-deliver"
+  },
+  "embedded": {
+    "file": "architecture.html",
+    "sha256": "59b332af7ab9a61b7aa35c95b74991e508ae7246d83986eef19a0d4248181c74",
+    "adaptation": "project-map-passport-navigation-v7",
+    "visual_review": "not-performed"
+  },
+  "note": "Native receipt paths refer to temporary delivery staging; retained files are named above."
+}

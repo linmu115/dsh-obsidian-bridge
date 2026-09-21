@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "DSH Obsidian Bridge · 内部职责与外部接口",
+    "subtitle": "统一桥独立维护；Core、普通贴纸与 Obsidian 侧桥保留自身业务",
+    "locale": "zh-CN",
+    "quality_profile": "standard"
+  },
+  "components": [
+    {
+      "id": "identity",
+      "type": "backend",
+      "label": "身份与 Vault 路由",
+      "sublabel": "稳定身份 / 绑定修订 / 多 Vault",
+      "pos": [
+        650,
+        100
+      ],
+      "size": [
+        310,
+        130
+      ]
+    },
+    {
+      "id": "transport",
+      "type": "backend",
+      "label": "连接与共享传输",
+      "sublabel": "租约 / 就绪挂载 / 动作分派",
+      "pos": [
+        650,
+        450
+      ],
+      "size": [
+        310,
+        130
+      ]
+    },
+    {
+      "id": "reference",
+      "type": "backend",
+      "label": "内部引用接入",
+      "sublabel": "Host 来源 / Client 领取 / 补偿",
+      "pos": [
+        650,
+        800
+      ],
+      "size": [
+        310,
+        130
+      ]
+    },
+    {
+      "id": "cli",
+      "type": "backend",
+      "label": "绑定 Vault CLI",
+      "sublabel": "目标核验 / 官方 CLI / 操作 skill",
+      "pos": [
+        1100,
+        800
+      ],
+      "size": [
+        310,
+        130
+      ]
+    },
+    {
+      "id": "protocol",
+      "type": "backend",
+      "label": "内部 Protocol",
+      "sublabel": "控制 / 数据 / 绑定 / 发现",
+      "pos": [
+        1100,
+        450
+      ],
+      "size": [
+        310,
+        130
+      ]
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "Annotation Core（外部）",
+      "sublabel": "引用事务 / UI / 上下文",
+      "pos": [
+        100,
+        800
+      ],
+      "size": [
+        310,
+        130
+      ]
+    },
+    {
+      "id": "companion",
+      "type": "backend",
+      "label": "Obsidian 侧桥（外部）",
+      "sublabel": "Vault 绑定 / Viewer / 回执",
+      "pos": [
+        1700,
+        450
+      ],
+      "size": [
+        310,
+        130
+      ]
+    },
+    {
+      "id": "sticker",
+      "type": "backend",
+      "label": "普通 Sticker（外部）",
+      "sublabel": "贴纸 / 笔记关联",
+      "pos": [
+        100,
+        450
+      ],
+      "size": [
+        310,
+        130
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "DSH Bridge 内部",
+      "wraps": [
+        "identity",
+        "transport",
+        "reference",
+        "cli",
+        "protocol"
+      ],
+      "pad": 25
+    }
+  ],
+  "connections": [
+    {
+      "id": "identity-transport",
+      "from": "identity",
+      "to": "transport",
+      "label": "选择 Vault 连接",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        805,
+        340
+      ]
+    },
+    {
+      "id": "transport-companion",
+      "from": "transport",
+      "to": "companion",
+      "label": "受控连接与传输",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          1000,
+          515
+        ],
+        [
+          1000,
+          300
+        ],
+        [
+          1855,
+          300
+        ]
+      ],
+      "labelAt": [
+        1420,
+        300
+      ]
+    },
+    {
+      "id": "reference-transport",
+      "from": "reference",
+      "to": "transport",
+      "label": "借用传输与引用交接",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        805,
+        680
+      ]
+    },
+    {
+      "id": "reference-core",
+      "from": "reference",
+      "to": "core",
+      "label": "来源注册 / 添加 / 提交补偿",
+      "fromSide": "left",
+      "toSide": "right",
+      "labelAt": [
+        525,
+        865
+      ]
+    },
+    {
+      "id": "cli-identity",
+      "from": "cli",
+      "to": "identity",
+      "label": "核验目标身份",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          1510,
+          865
+        ],
+        [
+          1510,
+          165
+        ]
+      ],
+      "labelAt": [
+        1510,
+        700
+      ]
+    },
+    {
+      "id": "transport-protocol",
+      "from": "transport",
+      "to": "protocol",
+      "label": "共享类型与校验",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        1030,
+        515
+      ]
+    },
+    {
+      "id": "sticker-transport",
+      "from": "sticker",
+      "to": "transport",
+      "label": "借用通道 / 注册业务动作",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        530,
+        515
+      ]
+    }
+  ]
+}

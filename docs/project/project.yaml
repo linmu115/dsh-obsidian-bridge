@@ -5,5 +5,40 @@
   "kind": "software",
   "map": "map.md",
   "sources": [],
-  "bindings": []
+  "bindings": [],
+  "archify": {
+    "architecture": {
+      "source": "diagrams/architecture.json",
+      "node_records": {
+        "identity": [
+          "IF-vault-binding"
+        ],
+        "transport": [
+          "MOD-lifecycle",
+          "IF-lifecycle"
+        ],
+        "reference": [
+          "MOD-reference"
+        ],
+        "cli": [
+          "IMP-obsidian-cli"
+        ],
+        "protocol": [
+          "MOD-protocol"
+        ],
+        "core": [
+          "INT-reference-core"
+        ],
+        "companion": [
+          "INT-maintenance-offline-binding"
+        ]
+      }
+    }
+  },
+  "workspaces": [
+    {
+      "id": "source",
+      "path": "../.."
+    }
+  ]
 }

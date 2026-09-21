@@ -5,18 +5,18 @@ import { CLI_COMMANDS, type CliParameters } from './obsidian-cli.ts';
 import { type ObsidianOperations } from './operation-service.ts';
 import { obsidianOperationSkill } from './operation-skill.ts';
 
-export function registerOperationTools(ctx: Context, lifecycle: ObsidianBridgeLifecycle, operations: ObsidianOperations) {
+export function registerOperationTools(ctx: Context, lifecycle: ObsidianBridgeLifecycle, operations?: ObsidianOperations) {
   const output = { schema: { type: 'string' as const }, render: (_args: unknown, text: string) => [{ type: 'text' as const, text }] };
   const tools: ToolDefinition[] = [
-    defineTool({ name: 'dsh_obsidian_guide', description: 'Read the Bridge-bundled bound-Vault operation skill. Use before Obsidian operations; official CLI is mandatory.', parameters: {}, output, execute: async () => obsidianOperationSkill.content }),
+    defineTool({ name: 'dsh_obsidian_guide', description: 'Read Bridge connection and optional CLI operation guidance.', parameters: {}, output, execute: async () => operations ? obsidianOperationSkill.content : 'Obsidian CLI is unavailable. Basic Bridge references and navigation remain available. Configure the optional CLI and reload Bridge to enable CLI tools. Use the DSH Obsidian connection settings to manage Vaults; Maintenance is not required.' }),
     defineTool({ name: 'dsh_obsidian_targets', description: 'List Vaults bound to this DSH instance/profile. Does not change bindings or inspect per-Vault operation capabilities.', parameters: {}, output,
       execute: async () => { await lifecycle.refreshVaults?.(); return JSON.stringify({ vaults: lifecycle.listVaults?.().filter(v => v.state === 'bound').map(v => ({ vaultId: v.vaultId, displayName: v.displayName, bindingRevision: v.binding.revision })) ?? [] }); } }),
-    defineTool({ name: 'dsh_obsidian_cli', description: 'Run the official CLI against an explicitly bound Vault. Read dsh_obsidian_guide first. Writes require requestId; reusing it returns a receipt, never repeats the operation. Plugin management is limited to inspection/reload.',
+    ...(operations ? [defineTool({ name: 'dsh_obsidian_cli', description: 'Run the official CLI against an explicitly bound Vault. Read dsh_obsidian_guide first. Writes require requestId; reusing it returns a receipt, never repeats the operation. Plugin management is limited to inspection/reload.',
       parameters: { vaultId: { type: 'string', required: true }, command: { type: 'string', enum: Object.keys(CLI_COMMANDS), required: true }, parameters: { type: 'json', required: true }, requestId: { type: 'string' } }, output,
       execute: async (args, exec) => {
         if (!exec.agent) throw new Error('A DSH conversation is required');
         return JSON.stringify(await operations.execute({ vaultId: args.vaultId, command: args.command, parameters: args.parameters as CliParameters, ...(args.requestId ? { requestId: args.requestId } : {}) }, exec.agent.session.id, exec.signal));
-      } }),
+      } })] : []),
   ];
   for (const tool of tools) ctx.tools.register(tool);
   // Optional managed-executor export; regular DSH tool policy remains in force.

@@ -1,5 +1,3 @@
-import { registerBridgeBusinessPage, type BusinessPageService } from './business-page.ts';
-import { createVaultFolderBinding } from './vault-folder.ts';
 import { createCliTargetResolver, resolveCliExecutable } from './obsidian-cli.ts';
 import { ObsidianOperations, type OperationStorage } from './operation-service.ts';
 import { obsidianOperationSkill } from './operation-skill.ts';
@@ -71,6 +69,7 @@ export const Config = s.object({
 });
 
 export class BridgeLifecycleService extends TypertRemoteService implements ObsidianBridgeLifecycle {
+  private cli = { available: false };
   private readonly runtime: VaultBridgeRuntime;
   private readonly discovery: ReturnType<typeof startHostDiscovery>;
   readonly runtimeIdentity: BridgeRuntimeIdentity;
@@ -98,25 +97,22 @@ export class BridgeLifecycleService extends TypertRemoteService implements Obsid
       void this.discovery.refresh();
       injected.effect(()=>()=>{identity.capabilities=identity.capabilities.filter(value=>value!=="maintenance-knowledge-v1");void this.discovery.refresh();},"obsidian bridge: optional maintenance knowledge");
     });
-    ctx.inject(["maintenanceBusinessPages"], injected => {
-      const pages = injected.get("maintenanceBusinessPages") as BusinessPageService;
-      if(pages.identity.instanceId!==identity.instanceId||pages.identity.profileId!==identity.profileId)return;
-      const bindSelectedFolder=createVaultFolderBinding({lifecycle:this,identity,probe:origin=>this.runtime.probe(origin),bind:async(vaultId,request,expected,signal)=>{
-        const result=await this.runtime.changeVaultBinding(vaultId,request,{identity:expected,signal});
-        await this.discovery.refresh();return result;
-      }});
-      injected.effect(()=>registerBridgeBusinessPage(pages,this,identity,{bindSelectedFolder}),"obsidian bridge: maintenance business page");
-    });
     ctx.inject(["annotationCoreHost"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0], { profileId: this.runtimeIdentity.profileId }));
-    ctx.inject(['skills'], scope => { scope.skills.register(obsidianOperationSkill); });
     ctx.inject(['tools'], async scope => {
       let active = true;
       scope.effect(() => () => { active = false; }, 'obsidian bridge: CLI registration lifetime');
       const { registerOperationTools } = await import('./operation-tools.ts');
+      const executable = await resolveCliExecutable(config.obsidianCliPath).catch(() => undefined);
       if (!active) return;
+      this.cli = { available: executable !== undefined };
+      if (executable === undefined) {
+        registerOperationTools(scope, this);
+        return;
+      }
+      scope.inject(['skills'], skills => { skills.skills.register(obsidianOperationSkill); });
       const operations = new ObsidianOperations({
         resolveTarget: createCliTargetResolver({ lifecycle: this, probe: origin => this.runtime.probe(origin), ...(config.obsidianRegistryPath ? { registryPath: config.obsidianRegistryPath } : {}) }),
-        executable: () => resolveCliExecutable(config.obsidianCliPath),
+        executable: () => resolveCliExecutable(executable),
         storage: scope.get('storageDomain') as unknown as OperationStorage,
       });
       scope.effect(() => () => operations.dispose(), 'obsidian bridge: CLI operations');
@@ -126,7 +122,8 @@ export class BridgeLifecycleService extends TypertRemoteService implements Obsid
   }
 
   getInstanceIdentity=()=>this.identity;
-  getBridgeConfig() { return {origin:this.runtime.bridgeOrigin,runtimeIdentity:this.runtimeIdentity,identity:this.identity,vaults:this.runtime.identities()}; }
+  getCliAvailability=()=>this.cli;
+  getBridgeConfig() { return {origin:this.runtime.bridgeOrigin,runtimeIdentity:this.runtimeIdentity,identity:this.identity,vaults:this.runtime.identities(),cli:this.cli,referenceLocationResolverAvailable:this.ctx.get("maintenanceReferenceResolver") !== undefined}; }
   forVault=(vaultId:string)=>this.runtime.forVault(vaultId);
   listVaults=()=>this.runtime.listVaults();
   refreshVaults=()=>this.discovery.refresh();
@@ -146,8 +143,10 @@ export class BridgeLifecycleService extends TypertRemoteService implements Obsid
   resume = () => this.runtime.resume();
 }
 
-export function apply(ctx: Context, config: Config): void {
-  ctx.inject(inject, async (injected) => {
+// Keep required initialization on the loader-owned fiber. A nested inject fiber
+// is not part of Loader settlement, so required consumers could be audited before
+// identity storage has opened and obsidianBridgeLifecycle has been published.
+export async function apply(injected: Context, config: Config): Promise<void> {
     const abort = new AbortController();
     injected.effect(() => () => abort.abort(), "dsh-obsidian-bridge: host startup");
     const server = (injected as Context & { webServer: WebServerBinding }).webServer;
@@ -160,5 +159,4 @@ export function apply(ctx: Context, config: Config): void {
     if(abort.signal.aborted){await identity.dispose();abort.signal.throwIfAborted();}
     injected.effect(()=>identity.dispose,"obsidian bridge: identity domain");
     new BridgeLifecycleService(injected, config, identity.identity);
-  });
 }

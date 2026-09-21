@@ -1,0 +1,124 @@
+{
+  "output": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\index.html",
+  "fingerprint": "402ff4bd9e9d38661cc79ad232cf2b395b7d3cc3c4f02ade537bcb7258d07364",
+  "diagrams": {
+    "architecture": {
+      "file": "architecture.html",
+      "canonical_file": "architecture.native.html",
+      "source": "native-archify",
+      "source_path": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\diagrams\\architecture.json",
+      "source_sha256": "3b5ea6894929b993850d99366d90a0334ffb33c939fde5d508480a19937b80b0",
+      "title": "DSH Obsidian Bridge · 内部职责与外部接口",
+      "archify_commit": "d673e8300df60a5c8166abe78787fdc78f6b8000",
+      "warnings": [],
+      "errors": [],
+      "record_nodes": {
+        "IF-vault-binding": [
+          "identity"
+        ],
+        "MOD-lifecycle": [
+          "transport"
+        ],
+        "IF-lifecycle": [
+          "transport"
+        ],
+        "MOD-reference": [
+          "reference"
+        ],
+        "IMP-obsidian-cli": [
+          "cli"
+        ],
+        "MOD-protocol": [
+          "protocol"
+        ],
+        "INT-reference-core": [
+          "core"
+        ],
+        "INT-maintenance-offline-binding": [
+          "companion"
+        ]
+      },
+      "nodes": [
+        {
+          "id": "identity",
+          "label": "身份与 Vault 路由",
+          "record_ids": [
+            "IF-vault-binding"
+          ]
+        },
+        {
+          "id": "transport",
+          "label": "连接与共享传输",
+          "record_ids": [
+            "MOD-lifecycle",
+            "IF-lifecycle"
+          ]
+        },
+        {
+          "id": "reference",
+          "label": "内部引用接入",
+          "record_ids": [
+            "MOD-reference"
+          ]
+        },
+        {
+          "id": "cli",
+          "label": "绑定 Vault CLI",
+          "record_ids": [
+            "IMP-obsidian-cli"
+          ]
+        },
+        {
+          "id": "protocol",
+          "label": "内部 Protocol",
+          "record_ids": [
+            "MOD-protocol"
+          ]
+        },
+        {
+          "id": "core",
+          "label": "Annotation Core（外部）",
+          "record_ids": [
+            "INT-reference-core"
+          ]
+        },
+        {
+          "id": "companion",
+          "label": "Obsidian 侧桥（外部）",
+          "record_ids": [
+            "INT-maintenance-offline-binding"
+          ]
+        },
+        {
+          "id": "sticker",
+          "label": "普通 Sticker（外部）",
+          "record_ids": []
+        }
+      ],
+      "receipt_file": "architecture.receipt.json",
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "standard",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 3
+      }
+    },
+    "workflow": {
+      "file": null,
+      "missing": true,
+      "reason": "尚未登记原生 Archify 图源；可在 project.yaml 的 archify 中关联已有 JSON。"
+    }
+  },
+  "exported_at": "2026-09-19 13:24 UTC",
+  "preview": {
+    "status": "running",
+    "url": "http://localhost:10905/24f54fbf75760b5927f43037f824797d/",
+    "entry": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\index.html",
+    "pid": 16040,
+    "reused": true,
+    "idle_timeout_hours": 8
+  },
+  "url": "http://localhost:10905/24f54fbf75760b5927f43037f824797d/"
+}

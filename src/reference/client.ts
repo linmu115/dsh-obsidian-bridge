@@ -1,5 +1,5 @@
 import {assertMaintenanceSessionAvailable} from "../session-availability.ts";
-import { resolveMaintenanceLocation } from "./bridge/maintenance-location.ts";
+import { resolveMaintenanceLocation, type ReferenceLocation } from "./bridge/maintenance-location.ts";
 import type { Context as CordisContext } from "@deepseek-ai/cordis";
 import type { AnnotationCoreClient } from "dsh-annotation-core/client-api";
 import type { ObsidianBridgeLifecycle } from "../api.ts";
@@ -41,11 +41,18 @@ export function apply(ctx: Context): void {
   const instance = identity?.dshInstanceId;
   const instanceScope = instance === undefined ? {} : { dshInstanceId: instance };
   const bridge = ctx.obsidianBridgeLifecycle.transport!;
+  const resolveLocation = (location: ReferenceLocation) => {
+    if (ctx.obsidianBridgeLifecycle.hasReferenceLocationResolver?.() === false) {
+      if (location.logicalSessionId) throw new Error("此历史引用需要会话解析服务，当前实例未提供该能力");
+      return Promise.resolve(undefined);
+    }
+    return resolveMaintenanceLocation(location);
+  };
   const deletionHandler = (transport:typeof bridge)=>createReferenceDeleteActionHandler(ctx.annotationCore, transport, profileId, {
     ...instanceScope,
     resolveSession: async action => {
       if (action.type !== "reference-delete-request") return undefined;
-      const resolved = await resolveMaintenanceLocation(action);
+      const resolved = await resolveLocation(action);
       await assertMaintenanceSessionAvailable(resolved?.logicalSessionId??action.logicalSessionId);
       return resolved?.sessionId ?? (action.logicalSessionId ? undefined : action.sessionId);
     },
@@ -72,7 +79,7 @@ export function apply(ctx: Context): void {
           const sessionId = ctx.sessions.list.getSnapshot().current;
           if (!sessionId) return "retry";
           if (action.dshInstanceId !== undefined && action.dshInstanceId !== instance) return "ignored";
-          const target = await resolveMaintenanceLocation({ sessionId });
+          const target = await resolveLocation({ sessionId });
           await assertMaintenanceSessionAvailable(target?.logicalSessionId);
           if (target !== undefined && target.sessionId !== sessionId) throw new Error("Capture resolver changed the receiving session identity");
           try { await consumeObsidianReferenceCapture({
@@ -93,7 +100,7 @@ export function apply(ctx: Context): void {
         if (action.type === "deep-link" && action.setId !== undefined) {
           if (action.targetSurfaceId !== undefined && action.targetSurfaceId !== surfaceId) return "ignored";
           if (action.dshInstanceId !== undefined && action.dshInstanceId !== instance) return "ignored";
-          const resolved = await resolveMaintenanceLocation(action);
+          const resolved = await resolveLocation(action);
           await assertMaintenanceSessionAvailable(resolved?.logicalSessionId??action.logicalSessionId);
           if (action.logicalSessionId && resolved === undefined) return "retry";
           const targetSessionId = resolved?.sessionId ?? action.sessionId;
