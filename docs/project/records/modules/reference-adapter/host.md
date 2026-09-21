@@ -57,4 +57,4 @@ Host 向 Core 注册 obsidian-note 来源适配器，在线准备时调用 Compa
 
 真实提交后，commitBacklink 把用户消息、引用集与引用身份交给 Companion。取消待发送通过 discard，已提交删除通过 deleteCommitted。反向删除通过 Lifecycle 挂载 Host 轮询，调用 Core 可选 deleteReferenceLink；若有逻辑会话身份，优先经 Maintenance 解析。
 
-源码 [来源 Adapter](../../../../../src/reference/host/obsidian-source-adapter.ts) 与 [宿主注册和轮询](../../../../../src/reference/host.ts) 是当前观察依据。返回 [消费方接入](integrations/core.md) 或 [提供方合同](../../../../../../dsh-annotation-core/docs/project/records/modules/annotation-core/interfaces/host.md)。
+源码 [来源 Adapter](../../../../../src/reference/host/obsidian-source-adapter.ts) 与 [宿主注册和轮询](../../../../../src/reference/host.ts) 是当前观察依据。Host 侧解析器读取是可选能力：`maintenanceReferenceResolver` 未注册时按唯一写入端与 native 身份处理，不伪装成已解析（见 [连接与挂载合同](../bridge-lifecycle/interface.md)）。返回 [消费方接入](integrations/core.md) 或 [提供方合同](../../../../../../dsh-annotation-core/docs/project/records/modules/annotation-core/interfaces/host.md)。

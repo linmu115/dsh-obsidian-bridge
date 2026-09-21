@@ -141,7 +141,7 @@
 
 此模块现位于 DSH Bridge 内部，把 obsidian-note 接入共享 Core，并使用桥统一的连接与动作分派。原 dsh-obsidian-reference-adapter 包在初阶段曾保留兼容能力检查，当前已退役，不列候选安装项；本条目 ID 保留并描述 Bridge 内部引用模块。边界分成 [Host 来源准备与删除](host.md)、[Client 定向领取与导航](client.md)：前者可以在浏览器关闭后继续完成删除，后者负责当前页面和目标会话。
 
-配置统一来自 Bridge，profile 与 Core 及已接入的 Maintenance 一致。接入的唯一合同分别是 [Core Host](../../../../../../dsh-annotation-core/docs/project/records/modules/annotation-core/interfaces/host.md)、[Core Client](../../../../../../dsh-annotation-core/docs/project/records/modules/annotation-core/interfaces/client.md)、[Lifecycle](../bridge-lifecycle/interface.md) 与 [Companion 引用交接](../../../../../../obsidian-deepharness-bridge/docs/project/records/modules/obsidian-companion/interfaces/references.md)。
+配置统一来自 Bridge，profile 与 Core 及已接入的 Maintenance 一致。可选维护能力缺席时，宿主会在配置中明确声明，客户端据此选择本地路径而不是去请求不存在的解析接口，见 [Client 定向领取](client.md)。接入的唯一合同分别是 [Core Host](../../../../../../dsh-annotation-core/docs/project/records/modules/annotation-core/interfaces/host.md)、[Core Client](../../../../../../dsh-annotation-core/docs/project/records/modules/annotation-core/interfaces/client.md)、[Lifecycle](../bridge-lifecycle/interface.md) 与 [Companion 引用交接](../../../../../../obsidian-deepharness-bridge/docs/project/records/modules/obsidian-companion/interfaces/references.md)。
 
 提供方合同不复制到 Adapter；本模块的接入细节集中于 [接入 Core](integrations/core.md)。删除关系不删除会话或笔记，Companion 的标记清理再按共享使用方判断。
 
@@ -153,4 +153,4 @@
 
 依据 [[REQ-vault-instance-binding]]，保留单一 obsidian-note 来源类型，在 Bridge 内按 vaultId 选择连接，覆盖 Host 来源准备、Client 领取与导航、回链和删除；同名笔记不能串入另一 Vault。消费 [[IF-vault-binding]] 以及 [[INT-suite-extension-pages]] 所链接的 Maintenance 有效范围；缺少 Maintenance 时基础原生引用继续运行。
 
-上述接入此前已归入桥内部；当前由 `dsh-obsidian-bridge@0.4.1-rc2.3` 统一提供。旧 Adapter 0.3.5-rc2.2 的守卫与兼容元数据只作历史证据。实现与合成验收见 [[IMP-vault-binding-routing]]、[桥整合与双侧绑定的分阶段验证（历史）](../../../../../../../worktrees/session-context-graph-20260913/dsh-obsidian-session-reference-suite/docs/project/records/migration/current-entrypoints.md#VER-vault-binding-implementation)。
+上述接入此前已归入桥内部；当前由 `dsh-obsidian-bridge@0.4.1-rc2.8` 统一提供（本模块在 0.4.1-rc2.7 增加可选解析能力缺席分支，包含在该版本中）。旧 Adapter 0.3.5-rc2.2 的守卫与兼容元数据只作历史证据。实现与合成验收见 [[IMP-vault-binding-routing]]、[桥整合与双侧绑定的分阶段验证（历史）](../../../../../../../worktrees/session-context-graph-20260913/dsh-obsidian-session-reference-suite/docs/project/records/migration/current-entrypoints.md#VER-vault-binding-implementation)。

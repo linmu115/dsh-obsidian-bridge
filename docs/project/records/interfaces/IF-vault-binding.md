@@ -32,6 +32,6 @@
 
 本机发现只发布无令牌的候选身份与有效运行端点。端口和 bootId 变化不改变持久绑定；重新连接须核对新的启动身份。多 Vault 使用 `forVault(vaultId)`；省略目标且不能唯一确定时返回歧义，不使用任意连接。
 
-Maintenance 的独立绑定管理通过已登记实例授权，在 DSH 停止时也可使用；Vault 须在线并启用兼容 Obsidian 侧桥。其授权、CAS、幂等与路径证明合同由 Maintenance / IF-offline-vault-binding 维护，见 [[INT-maintenance-offline-binding]]。DSH Bridge 的 CLI 操作仍需要运行中的 DSH。
+Maintenance 的独立绑定管理是**可选协作**：通过已登记实例授权，在 DSH 停止时也可使用；Vault 须在线并启用兼容 Obsidian 侧桥。其授权、CAS、幂等与路径证明合同由 Maintenance / IF-offline-vault-binding 维护，见 [[INT-maintenance-offline-binding]]。没有 Maintenance 时，本插件设置页的连接/断开/重连仍然可用并且是本批实际验收的路径；DSH Bridge 的 CLI 操作也需要运行中的 DSH，且 CLI 本身是可选增强。
 
 具体类型与错误结构以本仓库 [binding.ts](../../../../vendor/protocol/src/binding.ts) 和 [api.ts](../../../../src/api.ts) 为准。这里记录合同职责；真实绑定写入和业务往返的验收范围继续以对应版本回执为准。

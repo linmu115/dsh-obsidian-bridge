@@ -6,7 +6,7 @@
   "status": "current",
   "summary": "自动队列流程按 Companion、Bridge 内部连接/引用模块、Core 分责；直接关联引用另走专门入口。",
   "progress": "implemented",
-  "gap": "静态核对与来源合成测试覆盖；本次未执行双应用投递。",
+  "gap": "静态核对与来源合成测试覆盖；0.4.1-rc2.8 独立实例上一条真实引用的接收与同步已由用户刷新后验收，双应用完整投递流程与双链跳转仍未验收。",
   "sources": [
     {
       "path": "../../src/reference/client/annotation-consumer.ts",
@@ -79,7 +79,7 @@
 # 笔记选段投递：实际顺序与恢复
 
 1. Companion 保存用户选段 capture 与本侧定位责任，等待配置的内嵌页。
-2. DSH Bridge 确认可用 Companion 与当前实例，挂载 Client 外部连接。
+2. DSH Bridge 确认可用 Companion 与当前实例，挂载 Client 外部连接；宿主声明未注册可选会话解析服务时，本地目标直接使用当前会话，不请求 Maintenance 解析接口（见 [[IMP-native-reference-receive-20260920]]）。
 3. Adapter 将相同操作和引用身份持久加入目标 Core；随后向 Companion claim。
 4. 用户检查气泡与原草稿并发送。Core 校验目标、引用版本、来源及请求预算。
 5. 执行器接受并持久确认后 Core 标记 sent；Host 来源 Adapter 执行回链写回。

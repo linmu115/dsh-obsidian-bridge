@@ -11,8 +11,8 @@
     "ok": true,
     "command": "deliver",
     "type": "architecture",
-    "input": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\.map-archify-ligqno9s\\architecture.json",
-    "output": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\.map-archify-ligqno9s\\architecture.native.html",
+    "input": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\.map-archify-j6sbxyle\\architecture.json",
+    "output": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\.map-archify-j6sbxyle\\architecture.native.html",
     "specification": {
       "sha256": "3b5ea6894929b993850d99366d90a0334ffb33c939fde5d508480a19937b80b0",
       "bytes": 4868
@@ -37,7 +37,7 @@
   },
   "embedded": {
     "file": "architecture.html",
-    "sha256": "59b332af7ab9a61b7aa35c95b74991e508ae7246d83986eef19a0d4248181c74",
+    "sha256": "b19be5f2b4a08da61b27a13e22440a5ed8e98db95720d348ed5ed824e82c2c35",
     "adaptation": "project-map-passport-navigation-v7",
     "visual_review": "not-performed"
   },

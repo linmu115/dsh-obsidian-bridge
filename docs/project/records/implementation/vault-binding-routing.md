@@ -30,7 +30,9 @@
 
 # 双侧绑定、发现与多 Vault 路由的当前实现
 
-此前阶段实现与合成证据：Companion 0.7.0-rc2.1（6791643）、Protocol 0.4.0-rc2.1（829215e）、Bridge 0.4.0-rc2.2（0629de2）与 Sticker 0.7.4-rc2.2（365aa69）均已提交并通过类型检查、构建与合成回归。兼容 Adapter 0.3.5-rc2.2（2040bb1）不进入运行装配。第一阶段共享通道已验收，见 [第一阶段：整合 Bridge 与普通贴纸共用通道（历史）](../../../../../../worktrees/session-context-graph-20260913/dsh-obsidian-session-reference-suite/docs/project/records/migration/current-entrypoints.md#IMP-bridge-consolidation)。当前产品名和安装结构已由 [[DEC-single-bridge-product]] 取代旧包装：统一 Bridge 0.4.1-rc2.1、Sticker 0.7.4-rc2.3，新包及安装单独验收；下述绑定行为延续，旧数字不充作新包执行回执。
+**版本说明**：下述绑定行为延续到本批 `dsh-obsidian-bridge@0.4.1-rc2.8`；绑定入口包括本插件设置页（客户端 `settings.section` 槽）与可选的 Maintenance 管理页，两者使用 Bridge 的同一修订检查与写入路径（见 [[INT-maintenance-offline-binding]]）。此处保留早前阶段的实现与合成证据记录，旧数字不充作本批安装回执。
+
+此前阶段实现与合成证据：Companion 0.7.0-rc2.1（6791643）、Protocol 0.4.0-rc2.1（829215e）、Bridge 0.4.0-rc2.2（0629de2）与 Sticker 0.7.4-rc2.2（365aa69）均已提交并通过类型检查、构建与合成回归。兼容 Adapter 0.3.5-rc2.2（2040bb1）不进入运行装配。第一阶段共享通道已验收，见 [第一阶段：整合 Bridge 与普通贴纸共用通道（历史）](../../../../../../worktrees/session-context-graph-20260913/dsh-obsidian-session-reference-suite/docs/project/records/migration/current-entrypoints.md#IMP-bridge-consolidation)。当前产品名和安装结构已由 [[DEC-single-bridge-product]] 取代旧包装：统一 Bridge 0.4.1-rc2.1、Sticker 0.7.4-rc2.3，新包及安装单独验收。
 
 Companion 的 VaultBindingProvider 是设置页与 HTTP 管理的唯一持久写入口：显式选择候选、活跃身份核验、expectedRevision CAS 与 operationId 幂等。一个 Vault 同时绑定一个 instanceId/profileId；一个实例可连接多个 Vault。控制修改还需已认证 controller 并核验目标实例，发现本身不授予权限。
 
