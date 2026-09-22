@@ -1,3 +1,5 @@
+> 当前 CLI 增强版本 **0.4.1-rc2.9**：[[REQ-cli-full-access]]、[[IMP-cli-full-access]]、[[VER-cli-full-access]]。隐藏配置文件、插件完整生命周期与任意 JavaScript 已纳入本轮；以下 .8 安装与业务验收均为历史时点。本版尚未部署到用户实例。
+
 > 本批独立发布 0.4.1-rc2.8：[安装教程](../INSTALL.md)、[验证边界](../RELEASE-20260920.md)。历史版本说明按原时间阅读。
 
 # DSH Obsidian Bridge

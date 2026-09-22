@@ -3,7 +3,7 @@
   "archify_commit": "d673e8300df60a5c8166abe78787fdc78f6b8000",
   "source": {
     "path": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\diagrams\\architecture.json",
-    "sha256": "3b5ea6894929b993850d99366d90a0334ffb33c939fde5d508480a19937b80b0"
+    "sha256": "e75eedfc0554ebbfa7864e00aab416aca1a60c66e040c285e1a8a535ceee01ad"
   },
   "snapshot": "architecture.json",
   "native_delivery": {
@@ -11,15 +11,15 @@
     "ok": true,
     "command": "deliver",
     "type": "architecture",
-    "input": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\.map-archify-j6sbxyle\\architecture.json",
-    "output": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\.map-archify-j6sbxyle\\architecture.native.html",
+    "input": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\.map-archify-ima1msd2\\architecture.json",
+    "output": "D:\\AI\\DeepSeekHarness-Plugin\\repositories\\dsh-obsidian-bridge\\docs\\project\\views\\.map-archify-ima1msd2\\architecture.native.html",
     "specification": {
-      "sha256": "3b5ea6894929b993850d99366d90a0334ffb33c939fde5d508480a19937b80b0",
-      "bytes": 4868
+      "sha256": "e75eedfc0554ebbfa7864e00aab416aca1a60c66e040c285e1a8a535ceee01ad",
+      "bytes": 4873
     },
     "artifact": {
-      "sha256": "510e6aeceec3c8ee272e351157effad4e5e9c913e6215a8c8f6aa9eac55b1365",
-      "bytes": 805356
+      "sha256": "534d5db5e3756275a36bb1d61eb027b26d304b6583bdc9b4d8d62a88ca50213b",
+      "bytes": 805376
     },
     "validation": {
       "checksPassed": 9,
@@ -32,12 +32,12 @@
   },
   "canonical": {
     "file": "architecture.native.html",
-    "sha256": "510e6aeceec3c8ee272e351157effad4e5e9c913e6215a8c8f6aa9eac55b1365",
+    "sha256": "534d5db5e3756275a36bb1d61eb027b26d304b6583bdc9b4d8d62a88ca50213b",
     "validation": "native-deliver"
   },
   "embedded": {
     "file": "architecture.html",
-    "sha256": "b19be5f2b4a08da61b27a13e22440a5ed8e98db95720d348ed5ed824e82c2c35",
+    "sha256": "c7fbe43ee53907e07bae7a144a79dcb506e90653f8d9da1230d1283ccc48fc72",
     "adaptation": "project-map-passport-navigation-v7",
     "visual_review": "not-performed"
   },

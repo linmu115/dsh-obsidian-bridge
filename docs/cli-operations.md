@@ -1,41 +1,54 @@
-# 绑定 Vault 的 CLI 操作
+# 绑定 Vault 的 CLI 操作（0.4.1-rc2.9）
 
-0.4.1-rc2.3 源码候选在现有 DSH Bridge 内提供操作 skill 和 CLI 工具，不增加桥插件。Obsidian 侧继续使用现有 `obsidian-deepharness-bridge` 的绑定、公开身份和 live 路径证明；无需为本次 CLI 路线修改其插件代码。
+DSH Bridge 通过官方 Obsidian CLI 提供笔记、隐藏配置文件、插件生命周期和任意 JavaScript 操作。只使用 DSH 宿主的工具、可选 skills 与持久存储服务，不依赖 Core、Maintenance、Sticker 或 Codex Runtime。现有 Obsidian 侧桥负责绑定和 live 路径证明，无需为这次功能升级。
 
-## 使用与配置
+## 使用入口
 
-1. Obsidian 使用支持官方 CLI 的安装器，并启用命令行接口。当前官方文档要求 1.12.7+ 安装器；应用内部自动更新版本不能替代安装器升级。
-2. 在现有桥中保持明确的 Vault/DSH 实例绑定。多个目标由用户任务确定，工具始终要求 `vaultId`。
-3. DSH 的 skills 服务注册 `obsidian-bound-vault`，tools 服务注册 `dsh_obsidian_guide`、`dsh_obsidian_targets`、`dsh_obsidian_cli`。托管执行器可通过可选 `dshRuntimeSupport.managedTools.exportTool` 接入同一工具定义；未安装 Runtime Support 时原生工具仍独立可用。托管执行器没有选择 skill 时，可读 guide 工具获取相同完整指导。
-4. 先读 guide、选择 targets 返回的目标，再调用 CLI 工具。命令参数为 JSON 对象，不是 shell 命令文本。写入及 UI 操作须提供稳定 `requestId`。
+Obsidian 需要支持 CLI 的桌面安装器并启用 CLI。DSH 桥配置 obsidianCliPath（原生可执行文件绝对路径）或使用 PATH。未检测到 CLI 时基础桥继续工作，仅提供 guide/targets；不注册可执行 CLI 工具。
 
-可选桥配置：`obsidianCliPath` 为官方原生可执行文件绝对路径；Windows 示例 `D:\app\Obsidian\Obsidian.com`。留空时从当前 DSH 进程 PATH 搜索；应用更新 PATH 后，旧 DSH 进程可能需要配置绝对路径。`obsidianRegistryPath` 默认采用当前用户的 Obsidian `obsidian.json`，测试或特殊安装才覆盖。不要把显示名称或桥 vaultId 直接作为 CLI 原生 Vault ID。
+先读 dsh_obsidian_guide，再由 dsh_obsidian_targets 选择任务指定的已绑定 vaultId。调用 dsh_obsidian_cli 的字段为 vaultId、command、parameters，以及写操作必需的 requestId。模型不能在 parameters 中另传 Vault 选择器或 CLI 路径。
 
-## 本次支持范围
+## 命令
 
-- 精确路径笔记读取、创建、追加、前插、移动、重命名、移到回收站及打开。
-- 搜索、属性读取/设置/删除、模板列表/读取及从模板创建笔记。
-- 已有 CSS 片段的查看与启用/停用。
-- 已有插件的查看与重载。插件源码生成、构建、安装、卸载及启停由其他本地开发工具承担，不属于本桥业务。
+| 命令 | parameters | 行为 |
+| --- | --- | --- |
+| config:dir | {} | 返回当前 Vault 的真实配置目录，例如 .obsidian；尊重自定义配置目录 |
+| fs:list | path 可省略 | 列出精确目录的 files/folders；默认 Vault 根 |
+| fs:stat | path | 文件/目录信息，不存在返回 null |
+| fs:read | path, offset?, limit? | 返回 content、total、nextOffset；默认 12000、最大 24000 个 UTF-16 字符 |
+| fs:write | path, content | 覆盖或新建文本文件；空内容有效，父目录须已存在 |
+| fs:append | path, content | 追加精确文本，可分块部署大型插件 |
+| fs:mkdir | path | 创建目录及缺少的父目录 |
+| fs:remove | path, recursive? | 永久删除；非空目录必须显式 recursive:true |
+| plugin:install | id, enable? | 按社区目录 ID 安装，可同时启用 |
+| plugin:uninstall | id | 卸载插件 |
+| plugin:enable / plugin:disable | id, filter? | 启停，filter 为 core 或 community |
+| plugin:reload | id | 重载已部署的插件 |
+| plugin / plugins / plugins:enabled | id 或 filter/format/versions | 查询插件与启用状态 |
+| eval | code | 任意 JavaScript；可返回 Promise，所有调用均要求 requestId |
 
-CLI 不可用时明确返回 `CLI_UNAVAILABLE`，不静默走文件写入或 HTTP/eval 替代。尚未实现任意面板创建、自定义 Plugin API 执行器或 CSS 片段源码写入；已有片段启停不等于整个样式设计业务完成。本工具的固定参数合同不是逐 Vault 能力识别或授权清单。
+已有笔记 read/create/append/prepend/move/rename/delete/open、search/search:context、property:*、templates/template:read、snippets/snippets:enabled/snippet:enable/snippet:disable 保留。以工具枚举和 guide 的实际参数为准。
 
-## 路由与结果
+## 配置与本地插件
 
-工具先核对当前 DSH 实例/profile、Vault 绑定及修订、live publisher/boot/origin 与 Vault 实际路径，再将路径映射到 Obsidian 原生 ID。调用总以显式 `vault=<nativeId>` 开始，并通过 `vault info=path` 再核对 CLI 选择结果。离线、外国绑定、重复原生映射及复制目录身份不能成为默认活动 Vault 的回退理由。
+使用 config:dir 查询实际目录，再用 fs:* 读写其下的 JSON、CSS、插件 main.js/manifest.json/styles.css。fs:* 通过官方 CLI eval 调用 Obsidian 自带 Adapter，能够处理普通笔记索引之外的隐藏文件；不是另一项插件服务。
 
-使用原生子进程参数数组、关闭 shell 和窗口弹出；限制输入及输出大小。路径不使用活动文件默认值，并检查父目录和符号链接逃逸。CLI 派发前后重新检查绑定及启动身份；CLI 自身不是与 Bridge 绑定原子提交的事务，派发期间发生变化会记为结果待核对。重载 Obsidian 侧桥自身时，最多等待 15 秒重新发现相同 Vault、原生 ID、路径和绑定修订的新启动身份；仅重新读取身份，不重复发送重载。
+修改前备份原配置及目标插件文件，读取当前内容后只改任务涉及的字段。fs:write 整体替换文件，不执行 JSON 合并或自动备份。写入与运行生效分别检查：活跃插件可能重新保存自己的设置，按目标插件需要重载；不要把文件已写入报告为 UI 已生效。
 
-写操作在宿主 `storageDomain` 的 `dsh_obsidian_cli_receipts_v1` 保存请求摘要和 started/completed/unconfirmed 状态，不保存笔记正文、命令参数或 CLI 输出。相同会话及 requestId 不重复执行；参数改变时拒绝。超时、取消、CLI 报错、无法确认重载后身份或完成回执写入失败均不自动重试。读取结果直接返回调用方，不产生新的会话全文副本。每个存储域最多保留 10000 个写请求回执，满后拒绝新写，不自动删除回执后允许旧请求重放。
+本地插件仍用工程工具编译，再创建配置目录下 plugins/<id> 并写入所需文件。新插件调用 plugin:enable，已加载插件调用 plugin:reload。plugin:install 接受社区目录 ID，不接受本地源码目录。大文本采用约 4000 字符的精确分块，首块 fs:write，后续 fs:append，每块稳定且独立的 requestId；未知结果时先读回文件核对，不生成新 ID 盲目重发。传输对字符串长度和编码后的命令长度有限制，超限会在派发前报错。二进制资源可按任务使用 eval 的 Adapter 二进制 API。
 
-## 验证与边界
+## 任意脚本与授权边界
 
-2026-09-18：类型检查、构建、依赖检查及 144 项测试通过；包括 22 项新增 CLI/注册测试。发行包的隔离 Host 加载与浏览器边界测试通过。
+eval 按用户本次明确要求开放，具有 Obsidian 进程权限，可以调用 Plugin API；任意脚本及加载的插件代码不受 fs:* 路径检查隔离，不宣称为 Vault 沙箱。固定入口仍定位已绑定 Vault，不新增逐文件确认或逐 Vault 能力协商；宿主工具策略继续有效。
 
-真实只读验证：本机安装器从 1.8.4 更新到官方签名 1.13.7，启用 CLI；桥 resolver 根据实际绑定 revision 1 将 math 的桥身份映射到原生 Vault ID，CLI 返回的路径一致，版本为 1.13.7。随后通过候选源码执行器真实重载一次现有 Obsidian 侧桥，写请求 completed 回执及恢复后的同一目标、绑定均核验通过。首次收集报告时，重载后的单独 version 读取短暂报错；后续只读核对已通过，没有重复发送重载。未写笔记或改变 Vault 绑定；此证据不等于候选桥已在 DSH 加载。
+脚本源码和 fs 内容按 UTF-8/base64 传输，避免 CLI 参数解释破坏中文、换行及反斜杠。普通笔记命令仍沿用官方 CLI 文本约定。不把 Obsidian 内部对象当作稳定公开 API。
 
-升级前备份位于本机 `D:/AI/DeepSeekHarness-Plugin/artifacts/obsidian-cli-20260918/backup`。本机证据 `bridge-cli-readonly.json`、`bridge-cli-reload.json` 及 `reload-receipts.json` 仅保存身份、版本、状态和计数。配置 CLI 的全局开关及用户 PATH 是本次用户“必须要有 cli”的已授权环境配置。
+## 身份与回执
 
-官方依据：[Obsidian CLI](https://help.obsidian.md/cli)。实际窗口样式、完整引用往返和专用操作真实写入未验收。
+每次请求核对 DSH 实例/profile、Vault 绑定修订、publisher/boot/origin 和实际目录，再映射到原生 Vault ID；派发始终带 vault=<nativeId>，并先运行 vault info=path 核验。结构化文件路径必须 Vault 相对，不允许父级遍历、绝对路径和指向 Vault 外的链接；这些检查不约束任意 eval。
 
-后续部署（2026-09-18）：用户正常停止后，Bridge .3 / Sticker .5 已安装到 RC2/web，并通过正式 Start 恢复 running。live 插件目录 active、现有会话 skills/list 包含 obsidian-bound-vault。证据位于本机 artifacts/obsidian-cli-deploy-20260918；Agent 实际调用仍未验收。此后续状态替代最初候选包中未部署的说明，已归档包保持原始哈希。
+所有写入、插件启停和 eval 使用原有持久请求回执：started/completed/unconfirmed。相同会话及 requestId 只执行一次，参数变化拒绝，不把文件内容、脚本或输出保存到回执。超时、失败、最终身份不明或回执无法保存，不自动重试。最多保存 10000 条，不自动淘汰后重复执行旧写入。
+
+自身重载沿用同 Vault/绑定的新 boot 确认。停用或卸载 Obsidian 侧桥、脚本改绑或退出应用可能切断最终身份确认，此时操作可能已经生效但回执为 unconfirmed；不可当作未执行。CLI 与绑定不是原子事务；fs:* 预检与执行之间也不是全局文件锁。
+
+本版验证范围见 [发布验证](RELEASE-20260922.md)。此前 rc2.3 的部署记录属于历史，不代表本版已装入用户实例。官方依据：[Obsidian CLI](https://help.obsidian.md/cli)、[Vault API](https://docs.obsidian.md/Plugins/Vault)。

@@ -15,9 +15,16 @@ async function files(directory: string): Promise<string[]> {
 it("ships one Bridge node with standalone public runtime and type exports, without retired packages or Core/Sticker/SM", async () => {
   const fixture = await mkdtemp(join(tmpdir(), "dsh-bridge-package-"));
   try {
-    const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+    let packageRoot = root;
+    if (process.env.DSH_BRIDGE_RELEASE_TGZ) {
+      const unpack = join(fixture, 'unpacked');
+      await mkdir(unpack);
+      execFileSync('tar', ['-xf', resolve(process.env.DSH_BRIDGE_RELEASE_TGZ), '-C', unpack]);
+      packageRoot = join(unpack, 'package');
+    }
+    const manifest = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
     expect(manifest.name).toBe("dsh-obsidian-bridge");
-    expect(manifest.version).toBe("0.4.1-rc2.8");
+    expect(manifest.version).toBe("0.4.1-rc2.9");
     expect(manifest.peerDependenciesMeta["dsh-annotation-core"].optional).toBe(true);
     for (const name of retired) {
       expect(manifest.dependencies?.[name]).toBeUndefined();
@@ -25,12 +32,12 @@ it("ships one Bridge node with standalone public runtime and type exports, witho
     }
     expect(manifest.files).toContain("dist");
     expect(manifest.files).not.toContain("lib");
-    const patch = await readFile(join(root, "cordis.patch.yml"), "utf8");
+    const patch = await readFile(join(packageRoot, "cordis.patch.yml"), "utf8");
     expect(patch.match(/^\s+name:/gm)).toHaveLength(1);
     expect(patch).toContain("name: dsh-obsidian-bridge");
     const installed = join(fixture, "node_modules", manifest.name);
     await mkdir(installed, { recursive: true });
-    await cp(join(root, "dist"), join(installed, "dist"), { recursive: true });
+    await cp(join(packageRoot, "dist"), join(installed, "dist"), { recursive: true });
     await writeFile(join(installed, "package.json"), JSON.stringify(manifest));
     await writeFile(join(installed, "cordis.patch.yml"), patch);
     // Link only named host dependencies, never the workspace node_modules directory.

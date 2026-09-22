@@ -5,7 +5,7 @@
   "title": "绑定 Vault 的 CLI 与操作 skill（可选增强）",
   "status": "current",
   "progress": "implemented",
-  "summary": "0.4.1-rc2.8 中 CLI 为可选增强：探测到可执行文件才注册 skill 与 dsh_obsidian_cli，否则只保留 guide/targets 并在配置中报告不可用；目标映射、鉴权与持久回执行为延续。",
+  "summary": "0.4.1-rc2.9 经绑定 Vault CLI 开放隐藏配置读写、插件安装卸载启停与任意 JavaScript；保留目标核验和持久请求回执，无其他业务插件依赖。",
   "relations": [
     {
       "relation": "implements",
@@ -25,7 +25,7 @@
       "path": "docs/cli-operations.md",
       "role": "linked-authority",
       "workspace_id": "source",
-      "reviewed_sha256": "0b05f0ac3b448b2ca095932018ddde353a57dc69bd6d11cef9c4ec8e846174a1",
+      "reviewed_sha256": "be6573d6bfe491f598968ac0f667be914ddf92294271715ad04fad24e8e43e2f",
       "reviewed_dependencies": []
     },
     {
@@ -50,19 +50,19 @@
         },
         {
           "path": "src/obsidian-cli.ts",
-          "sha256": "9226fa4566c6c42a579dc4421036653bfb0637db7917ead908e736a711f163d0"
+          "sha256": "7f6bc5bc82558e941ca8407f9528e9f2b3410bfd0a0541408c46983d5093afbf"
         },
         {
           "path": "src/operation-service.ts",
-          "sha256": "92e44d9b81493fee0517fa22d378de617496c73b4d7270bee741ddfde83a4bcd"
+          "sha256": "8f90840b859b000a154279ef0e9346bb394c707715dace56ac153067090a051a"
         },
         {
           "path": "src/operation-skill.ts",
-          "sha256": "f8f8ffbe385b7771cb4b50c92cad3cd4e15d1dd1ff91653f64832ede5404c8a3"
+          "sha256": "aa210bf6109c4f5be8e4f1449602cf4628a521c829dd803d8ec964766d19537a"
         },
         {
           "path": "src/operation-tools.ts",
-          "sha256": "757561e7d245e0011ed58a5dbda790c61e79bec716c1d8488693373a5170243a"
+          "sha256": "de8426a995b50be432ae818ba92b85c3a5b159a02e097c9c1c762641ef23c35b"
         },
         {
           "path": "src/reference/host.ts",
@@ -83,8 +83,8 @@
       "symbol": "registerOperationTools",
       "role": "current-implementation",
       "workspace_id": "source",
-      "reviewed_sha256": "757561e7d245e0011ed58a5dbda790c61e79bec716c1d8488693373a5170243a",
-      "reviewed_symbol_sha256": "480c3bb585345b5ef6af653b897bd07a733b8e97bd518e35b0f44e1ad7ebbea5",
+      "reviewed_sha256": "de8426a995b50be432ae818ba92b85c3a5b159a02e097c9c1c762641ef23c35b",
+      "reviewed_symbol_sha256": "f49a8aa3f3c59feb531c6f2df52902e175689a4d823615b634c1adb425f5df21",
       "reviewed_dependencies": [
         {
           "path": "src/api.ts",
@@ -92,15 +92,15 @@
         },
         {
           "path": "src/obsidian-cli.ts",
-          "sha256": "9226fa4566c6c42a579dc4421036653bfb0637db7917ead908e736a711f163d0"
+          "sha256": "7f6bc5bc82558e941ca8407f9528e9f2b3410bfd0a0541408c46983d5093afbf"
         },
         {
           "path": "src/operation-service.ts",
-          "sha256": "92e44d9b81493fee0517fa22d378de617496c73b4d7270bee741ddfde83a4bcd"
+          "sha256": "8f90840b859b000a154279ef0e9346bb394c707715dace56ac153067090a051a"
         },
         {
           "path": "src/operation-skill.ts",
-          "sha256": "f8f8ffbe385b7771cb4b50c92cad3cd4e15d1dd1ff91653f64832ede5404c8a3"
+          "sha256": "aa210bf6109c4f5be8e4f1449602cf4628a521c829dd803d8ec964766d19537a"
         }
       ]
     },
@@ -116,26 +116,29 @@
         },
         {
           "path": "src/operation-service.ts",
-          "sha256": "92e44d9b81493fee0517fa22d378de617496c73b4d7270bee741ddfde83a4bcd"
+          "sha256": "8f90840b859b000a154279ef0e9346bb394c707715dace56ac153067090a051a"
         },
         {
           "path": "src/operation-skill.ts",
-          "sha256": "f8f8ffbe385b7771cb4b50c92cad3cd4e15d1dd1ff91653f64832ede5404c8a3"
+          "sha256": "aa210bf6109c4f5be8e4f1449602cf4628a521c829dd803d8ec964766d19537a"
         },
         {
           "path": "src/operation-tools.ts",
-          "sha256": "757561e7d245e0011ed58a5dbda790c61e79bec716c1d8488693373a5170243a"
+          "sha256": "de8426a995b50be432ae818ba92b85c3a5b159a02e097c9c1c762641ef23c35b"
         }
       ]
     }
   ],
   "source_review": {
-    "reviewed_at": "2026-09-21T07:36:46.597996+00:00",
-    "reason": "对照 src/index.ts 的 CLI 探测分支与 src/operation-tools.ts 的可选 operations 参数，并把 CLI 由必需改为可选增强",
-    "body_sha256": "b19cdb438b9acd8d0185d21ea40bb691378fb5836b41c90910044c0dbf58c04f"
+    "reviewed_at": "2026-09-22T05:06:05.144073+00:00",
+    "reason": "核对 CLI 可选注册、目标回执与 rc2.9 新增执行范围，历史 rc2.8 边界明确分列",
+    "body_sha256": "185933f5d4f4b47622168c15e2c2be790331b51e1df480dc4274a50dd3b9a1eb"
   }
 }
 ---
+
+当前能力已扩展到 **0.4.1-rc2.9**，见 [[IMP-cli-full-access]] 与 [[VER-cli-full-access]]；下文 .8 为旧版本行为及验收。目标/回执机制延续，插件仅重载的范围已经替代。
+
 
 # 绑定 Vault 的 CLI 与操作 skill（可选增强）
 

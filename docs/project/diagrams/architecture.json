@@ -54,7 +54,7 @@
       "id": "cli",
       "type": "backend",
       "label": "绑定 Vault CLI",
-      "sublabel": "目标核验 / 官方 CLI / 操作 skill",
+      "sublabel": "配置文件 / 插件部署启停 / 任意 JS",
       "pos": [
         1100,
         800

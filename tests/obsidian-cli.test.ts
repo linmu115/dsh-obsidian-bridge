@@ -25,11 +25,37 @@ it('pins the native Vault first and treats shell syntax, quotes and newlines as 
   expect(cliArgs(target(), 'create', { path: 'Notes/hello world.md', content })).toEqual(['vault=native-id', 'create', `content=${content}`, 'path=Notes/hello world.md']);
 });
 it.each([
-  ['read', { path: '../outside.md' }], ['create', { path: 'C:/outside.md' }], ['read', { path: '.obsidian/plugins/a/main.js' }],
+  ['read', { path: '../outside.md' }], ['create', { path: 'C:/outside.md' }], ['fs:write', { path: '.obsidian/../outside', content: 'x' }],
   ['append', { path: 'note.md', content: 'a', vault: 'other' }], ['read', { file: 'ambiguous' }],
-  ['plugin:install', { id: 'plugin' }], ['plugin:disable', { id: 'plugin' }], ['eval', { code: 'unsafe' }], ['constructor', {}],
+  ['plugin:install', { id: '../plugin' }], ['plugin:disable', { id: 'plugin', filter: 'all' }], ['eval', { code: 42 }], ['constructor', {}],
   ['plugin:reload', { id: '../plugin' }], ['append', { path: 'x.md', content: 'x', inline: 'true' }],
 ])('rejects routing/scope escapes: %s %j', (command, args) => { expect(() => validateCliRequest(command, args)).toThrow(); });
+it.each(['plugin:install', 'plugin:uninstall', 'plugin:enable', 'plugin:disable', 'plugin:reload'])('opens %s with durable write semantics', command => {
+  expect(validateCliRequest(command, {id:'my-plugin'}).write).toBe(true);
+  expect(cliArgs(target(), command, {id:'my-plugin'})).toEqual(['vault=native-id', command, 'id=my-plugin']);
+});
+it.each(['eval', 'fs:write', 'fs:append', 'fs:mkdir', 'fs:remove'])('requires a request identity before %s can execute', async command => {
+  const f = fixture();
+  const parameters = command === 'eval' ? {code:'1 + 1'} : command === 'fs:write' || command === 'fs:append' ? {path:'.obsidian/x',content:'x'} : {path:'.obsidian/x'};
+  await expect(f.service.execute({vaultId:'bridge-vault',command,parameters}, 'session', signal())).rejects.toMatchObject({code:'REQUEST_ID_REQUIRED'});
+  expect(f.runner).not.toHaveBeenCalled(); await f.service.dispose();
+});
+it('accepts hidden files while still rejecting a config junction outside the bound Vault', async () => {
+  expect(validateCliRequest('read', {path:'.obsidian/plugins/a/main.js'})).toBeDefined();
+  const outside = await mkdtemp(join(tmpdir(), 'dsh-cli-test-outside-'));
+  try {
+    await symlink(outside, join(root, '.obsidian'), process.platform === 'win32' ? 'junction' : 'dir');
+    const args = {path:'.obsidian/plugins/a/main.js', content:'x'};
+    await expect(validateCliPaths(target(), validateCliRequest('fs:write', args), args)).rejects.toMatchObject({code:'PATH_ESCAPE'});
+  } finally { if (dirname(resolve(outside)) === resolve(tmpdir()) && outside.startsWith(join(tmpdir(), 'dsh-cli-test-outside-'))) await rm(outside, {recursive:true,force:true}); }
+});
+it.each(['Error: failure', '=> undefined', '=> DSH_BRIDGE_FILE_RESULT:{"ok":false}'])('does not mark an unconfirmed Adapter write completed: %s', async output => {
+  const f = fixture(); f.runner.mockImplementation(async (_exe,args) => args[1] === 'vault' ? root : output);
+  const input = {vaultId:'bridge-vault',command:'fs:write',parameters:{path:'.obsidian/x',content:'private'},requestId:'write'};
+  await expect(f.service.execute(input,'session',signal())).rejects.toMatchObject({code:'FILE_EXECUTION_UNCONFIRMED'});
+  expect(await f.service.execute(input,'session',signal())).toMatchObject({replayed:true,receipt:{state:'unconfirmed'}});
+  expect(f.runner).toHaveBeenCalledTimes(2); await f.service.dispose();
+});
 it('rejects paths traversing a junction outside the Vault, even for new notes', async () => {
   const outside = await mkdtemp(join(tmpdir(), 'dsh-cli-test-outside-'));
   try {

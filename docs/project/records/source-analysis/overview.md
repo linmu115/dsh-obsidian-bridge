@@ -16,7 +16,7 @@ LLM 阅读入口：`project_map.py source <地图> --kind entrypoint|dependency|
 
 ## 工作区 source
 
-分支 `codex/independent-plugins-20260920`，提交 `9d21bf1d7028b3ddb3bc8b31f5cad259c9e291f8`；扫描 65 个文件。内容指纹 `94b79c974f5e4301`。
+分支 `codex/independent-plugins-20260920`，提交 `c1e28735b84be87b6ac18c7a89dd8528db43bd83`；扫描 68 个文件。内容指纹 `b61d89f369424b93`。
 
 ### 入口
 
@@ -39,7 +39,7 @@ LLM 阅读入口：`project_map.py source <地图> --kind entrypoint|dependency|
 
 ### 依赖与待补登记
 
-提取 263 项导入、3718 条静态调用/继承线索；待核对登记缺口 44 项。
+提取 281 项导入、4000 条静态调用/继承线索；待核对登记缺口 51 项。
 - `src/action-channel.ts:1` → `src/api.ts`
 - `src/action-channel.ts:2` → `src/transport.ts`
 - `src/action-channel.ts:3` → `src/reference/bridge/reference-polling.ts`
@@ -55,8 +55,13 @@ LLM 阅读入口：`project_map.py source <地图> --kind entrypoint|dependency|
 
 ### 待复核说明
 
-本次没有发现相对既有基线的变化；尚无人工核对基线的说明不因此视为有效。
+- [[IMP-config|独立 Bridge 安装与维护入口]]：package.json、README.md、package.json
+- [[IMP-independent-components-20260920|DSH Obsidian Bridge 独立组件升级]]：src/operation-skill.ts、src/operation-tools.ts、src/obsidian-cli.ts、src/operation-service.ts
+- [[IMP-native-reference-receive-20260920|独立会话引用接收能力检查]]：src/operation-tools.ts、src/operation-skill.ts、src/obsidian-cli.ts、src/operation-service.ts
+- [[IMP-required-consumer-startup-20260920|必需消费者启动等待]]：src/obsidian-cli.ts、src/operation-skill.ts、src/operation-tools.ts、src/operation-service.ts
+- [[IF-lifecycle|Bridge 合同：连接、统一分派与引用交接]]：src/operation-skill.ts、src/operation-tools.ts、src/operation-service.ts、src/obsidian-cli.ts
+- [[MOD-lifecycle|DSH Bridge：连接、引用交接与维护]]：src/operation-skill.ts、src/operation-service.ts、src/operation-tools.ts、src/obsidian-cli.ts
 
 ### 覆盖范围
 
-排除或不支持的文件 187 项，解析限制 3 项。仅扫描当前 Git 工作区，包含未忽略的新文件；不进入子仓库、依赖包或默认排除目录。动态调用、反射、路径别名及未支持语言需另行核对。完整清单通过 `--kind coverage` 查询。
+排除或不支持的文件 196 项，解析限制 3 项。仅扫描当前 Git 工作区，包含未忽略的新文件；不进入子仓库、依赖包或默认排除目录。动态调用、反射、路径别名及未支持语言需另行核对。完整清单通过 `--kind coverage` 查询。

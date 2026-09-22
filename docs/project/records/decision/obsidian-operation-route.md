@@ -5,7 +5,7 @@
   "title": "专门操作通道：现有两侧桥扩展与 CLI 优先",
   "date": "2026-09-18",
   "status": "current",
-  "summary": "用户确认由桥提供 skill，指导 DSH 优先操作绑定 Vault 的官方 CLI；两端各一个桥插件，直接操作权限，无逐 Vault 能力识别前置。CLI 为必需条件；DSH .3 源码候选已实现，本机 CLI 与重载已验证，Bridge .3 / Sticker .5 已部署并 active，skill 目录已核验。",
+  "summary": "0.4.1-rc2.9 经绑定 Vault CLI 开放隐藏配置读写、插件安装卸载启停与任意 JavaScript；保留目标核验和持久请求回执，无其他业务插件依赖。",
   "relations": [
     {
       "relation": "clarifies",
@@ -30,6 +30,13 @@
   ]
 }
 ---
+
+## 2026-09-22 当前修订
+
+用户明确开放任意 JavaScript、配置目录及插件代码写入、部署和启用；替代下文历史上的“插件仅重载”和“任意脚本未实现”限制。当前合同以 [[REQ-cli-full-access]]、[[IMP-cli-full-access]] 与 [CLI 操作](../../../cli-operations.md) 为准。基础桥仍可无 CLI 启动；调用这条操作路径时必须有 CLI。新增能力不依赖 Core、Maintenance、Sticker 或 Codex Runtime。
+
+以下保留 2026-09-18 决策过程与当时验证，不作为本版功能限制。
+
 
 # 专门操作通道：现有两侧桥扩展与 CLI 优先
 

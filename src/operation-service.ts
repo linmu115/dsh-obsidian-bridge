@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { realpath } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { z } from 'zod';
+import { parseFileOperationOutput } from './cli-files.ts';
 import { CliError, cliArgs, runCli, sameTarget, validateCliPaths, validateCliRequest, type CliParameters, type CliRunner, type CliTarget } from './obsidian-cli.ts';
 
 const receiptSchema = z.object({ digest: z.string(), state: z.enum(['started', 'completed', 'unconfirmed']), vaultId: z.string(), command: z.string(), bindingRevision: z.number(), at: z.number() }).strict();
@@ -70,6 +71,11 @@ export class ObsidianOperations {
     try {
       signal.throwIfAborted();
       const output = await run(executable, args, target.root, signal);
+      let fileResult: unknown;
+      if (input.command.startsWith('fs:') || input.command === 'config:dir') {
+        try { fileResult = parseFileOperationOutput(output); }
+        catch { throw new CliError('FILE_EXECUTION_UNCONFIRMED', 'Adapter operation failed or its result was not confirmed; inspect the target before retrying a write'); }
+      }
       signal.throwIfAborted();
       if (input.command === 'plugin:reload' && parameters.id === 'obsidian-deepharness-bridge') {
         // Reloading the executor itself deliberately changes its boot and endpoint.
@@ -88,7 +94,7 @@ export class ObsidianOperations {
         throw new CliError('POST_DISPATCH_TARGET_CHANGED', 'CLI returned but the Vault identity changed; reconcile the result before retrying');
       }
       if (operation.write) await save('completed');
-      return { vaultId: target.vaultId, bindingRevision: target.bindingRevision, command: input.command, state: 'completed', output, ...(operation.write ? { receipt, replayed: false } : {}) };
+      return { vaultId: target.vaultId, bindingRevision: target.bindingRevision, command: input.command, state: 'completed', output, ...(fileResult !== undefined ? { result: fileResult } : {}), ...(operation.write ? { receipt, replayed: false } : {}) };
     } catch (error) {
       if (operation.write) await save('unconfirmed').catch(() => undefined);
       throw error;

@@ -21,7 +21,10 @@
           "MOD-reference"
         ],
         "cli": [
-          "IMP-obsidian-cli"
+          "IMP-obsidian-cli",
+          "REQ-cli-full-access",
+          "IMP-cli-full-access",
+          "VER-cli-full-access"
         ],
         "protocol": [
           "MOD-protocol"

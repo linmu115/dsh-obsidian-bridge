@@ -1,6 +1,6 @@
 # DSH Obsidian Bridge
 
-**0.4.1-rc2.8 · DSH 0.1.5-rc.2**
+**0.4.1-rc2.9 · DSH 0.1.5-rc.2**
 
 一个独立 DSH 插件负责本实例与 Obsidian Vault 的连接、发现、路由、笔记定位和双链传输；引用交由 Annotation Core。Protocol 已内置，不再安装旧 Lifecycle、Reference Adapter 或 Suite。DSH 可以连接多个 Vault，每个 Vault 同时只绑定一个 DSH。
 
@@ -10,13 +10,13 @@ Obsidian CLI 是可选增强，缺少时基础桥照常工作，CLI 工具不会
 
 ## 部署方法
 
-**环境要求**：Node.js 24，可正常启动的 DSH `0.1.5-rc.2` / `web` profile，以及桌面版 Obsidian（仅笔记连接需要）。**必须先安装 Annotation Core**，本套引用功能依赖它。不需要 Maintenance、Launcher 或 Codex。
+**环境要求**：Node.js 24，可正常启动的 DSH `0.1.5-rc.2` / `web` profile，以及桌面版 Obsidian（仅笔记连接需要）。CLI、配置文件和插件管理可独立使用；引用功能才需要 Annotation Core。不需要 Maintenance、Launcher 或 Codex。
 
-从 [Release v0.4.1-rc2.8](https://github.com/linmu115/dsh-obsidian-bridge/releases/tag/v0.4.1-rc2.8) 下载 `dsh-obsidian-bridge-0.4.1-rc2.8.tgz`，然后：
+从 [Release v0.4.1-rc2.9](https://github.com/linmu115/dsh-obsidian-bridge/releases/tag/v0.4.1-rc2.9) 下载 `dsh-obsidian-bridge-0.4.1-rc2.9.tgz`，然后：
 
 ```powershell
 $env:DSH_HOME = '<你的 DSH_HOME>'
-dsh plugin --profile web add ./dsh-obsidian-bridge-0.4.1-rc2.8.tgz
+dsh plugin --profile web add ./dsh-obsidian-bridge-0.4.1-rc2.9.tgz
 ```
 
 安装命令会把包写进 profile 并在 `dsh.profile.bundles` 注册，**不要**再手工插入同名插件节点。随后正常重启 DSH 使新版本加载。
@@ -28,4 +28,6 @@ dsh plugin --profile web add ./dsh-obsidian-bridge-0.4.1-rc2.8.tgz
 **更新**：停止 DSH，备份 DSH_HOME，`plugin add` 新 tgz，重启并刷新内嵌/独立页面。
 **卸载**：`dsh plugin --profile web remove dsh-obsidian-bridge`（依赖它的贴纸应先移除）。
 
-完整说明（安装顺序、绑定核验、更新卸载、故障定位）：[INSTALL.md](docs/INSTALL.md)。本批为预发布，当前能力和未完成验收见 [发布验证记录](docs/RELEASE-20260920.md)。
+本次独立 CLI 权限增强的安装与用法：[INSTALL-CLI.md](docs/INSTALL-CLI.md)。命令合同见 [CLI 操作](docs/cli-operations.md)，本次验证边界见 [发布验证记录](docs/RELEASE-20260922.md)。
+
+本版开放 `.obsidian` 等隐藏文件读写、插件安装/卸载/启停和任意 JavaScript `eval`。无需 Core、Maintenance、Sticker 或 Codex Runtime；Obsidian 侧桥沿用现有绑定接口，不需配套升级。`eval` 具有 Obsidian 进程权限，不是 Vault 文件系统沙箱。

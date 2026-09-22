@@ -1,3 +1,10 @@
+## 0.4.1-rc2.9 — 2026-09-22
+
+- Open privileged JavaScript eval and plugin install/uninstall/enable/disable through the bound official CLI. Treat all eval as a write for durable request receipts.
+- Add config:dir and fs:list/stat/read/write/append/mkdir/remove using the native Obsidian Adapter through CLI eval; preserve Unicode and literal source code, support paginated reads and chunked text deployment.
+- Allow hidden Vault paths while preserving traversal/junction checks for structured file commands. Eval and plugin code explicitly have process privileges and are not path-sandboxed.
+- No new plugin dependencies or Companion update; guide, project map and acceptance scope updated. See docs/RELEASE-20260922.md.
+
 ## 0.4.1-rc2.2 — 2026-09-18
 
 - Add “选择文件夹并绑定” to the optional Maintenance plugin information page. Open a Windows native folder picker with cancellation and a 60-second limit.

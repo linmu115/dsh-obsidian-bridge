@@ -5,6 +5,7 @@ import { delimiter, isAbsolute, join, relative, win32 } from 'node:path';
 import { z } from 'zod';
 import { normalizeBridgeOrigin } from './control-client.ts';
 import { vaultLocationSchema } from './vault-folder.ts';
+import { fileOperationCode } from './cli-files.ts';
 import type { VaultIdentity } from 'dsh-obsidian-bridge-protocol/binding';
 import type { ObsidianBridgeLifecycle } from './api.ts';
 
@@ -110,12 +111,24 @@ export const CLI_COMMANDS: Readonly<Record<string, Spec>> = Object.freeze({
   'property:set': spec('path name value type', 'path name value', true, '', 'path'), 'property:remove': spec('path name', 'path name', true, '', 'path'),
   templates: spec('', '', false, 'total'), 'template:read': spec('name title', 'name', false, 'resolve'),
   snippets: spec(''), 'snippets:enabled': spec(''), 'snippet:enable': spec('name', 'name', true), 'snippet:disable': spec('name', 'name', true),
-  plugins: spec('filter format', '', false, 'versions'), plugin: spec('id', 'id'), 'plugin:reload': spec('id', 'id', true),
+  plugins: spec('filter format', '', false, 'versions'), 'plugins:enabled': spec('filter format', '', false, 'versions'),
+  plugin: spec('id', 'id'), 'plugin:reload': spec('id', 'id', true),
+  'plugin:install': spec('id', 'id', true, 'enable'), 'plugin:uninstall': spec('id', 'id', true),
+  'plugin:enable': spec('id filter', 'id', true), 'plugin:disable': spec('id filter', 'id', true),
+  // Arbitrary eval is deliberately privileged, including expressions that look read-only.
+  eval: spec('code', 'code', true),
+  'config:dir': spec(''),
+  'fs:list': spec('path', '', false, '', 'path'), 'fs:stat': spec('path', 'path', false, '', 'path'),
+  'fs:read': spec('path offset limit', 'path', false, '', 'path'),
+  'fs:write': spec('path content', 'path content', true, '', 'path'),
+  'fs:append': spec('path content', 'path content', true, '', 'path'),
+  'fs:mkdir': spec('path', 'path', true, '', 'path'),
+  'fs:remove': spec('path', 'path', true, 'recursive', 'path'),
 });
 export type CliParameters = Record<string, string | number | boolean>;
 export function validateCliRequest(command: string, parameters: CliParameters): Spec {
   const operation = Object.hasOwn(CLI_COMMANDS, command) ? CLI_COMMANDS[command]! : undefined;
-  if (!operation) return fail('UNSUPPORTED_COMMAND', 'Unsupported bridge CLI command; plugin operations only support inspection and reload');
+  if (!operation) return fail('UNSUPPORTED_COMMAND', 'Unsupported bridge CLI command; read dsh_obsidian_guide for supported commands');
   if (!parameters || typeof parameters !== 'object' || Array.isArray(parameters)) return fail('INVALID_PARAMETERS', 'Parameters must be an object');
   for (const key of Object.keys(parameters)) {
     const value = parameters[key];
@@ -124,11 +137,19 @@ export function validateCliRequest(command: string, parameters: CliParameters): 
     if (String(value).length > 24_000) fail('INPUT_TOO_LARGE', 'CLI input exceeds this transport limit; split the operation into smaller edits');
   }
   for (const key of operation.required!) if (parameters[key] === undefined || (key !== 'content' && key !== 'value' && String(parameters[key]).length === 0)) fail('INVALID_PARAMETERS', `Required parameter: ${key}`);
-  if (command === 'plugin:reload' && !/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(String(parameters.id))) fail('INVALID_PARAMETERS', 'A plugin ID is required');
+  if (command.startsWith('plugin:') && !/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(String(parameters.id))) fail('INVALID_PARAMETERS', 'A plugin ID is required');
+  if (parameters.filter !== undefined && !['core', 'community'].includes(String(parameters.filter))) fail('INVALID_PARAMETERS', 'Plugin filter must be core or community');
+  for (const key of ['offset', 'limit']) if (command === 'fs:read' && parameters[key] !== undefined) {
+    const value = parameters[key];
+    if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < (key === 'limit' ? 1 : 0) || (key === 'limit' && value > 24000)) fail('INVALID_PARAMETERS', 'Read offset/limit must be non-negative integers; limit is 1..24000 characters');
+  }
+  if (command === 'eval' && typeof parameters.code !== 'string') fail('INVALID_PARAMETERS', 'JavaScript code must be a string');
+  if (command.startsWith('fs:') && parameters.content !== undefined && typeof parameters.content !== 'string') fail('INVALID_PARAMETERS', 'File content must be a string');
   for (const key of operation.paths!) if (parameters[key] !== undefined) {
+    if (typeof parameters[key] !== 'string') fail('INVALID_PATH', 'Path must be a string');
     const path = String(parameters[key]);
-    if (isAbsolute(path) || win32.isAbsolute(path) || path.includes('\\') || path.split('/').some(part => part === '..' || part.startsWith('.')) || /[\0:\r\n]/.test(path))
-      fail('INVALID_PATH', 'Use a Vault-relative note path with no parent traversal or hidden configuration directory');
+    if (isAbsolute(path) || win32.isAbsolute(path) || path.includes('\\') || path.split('/').some(part => part === '..' || part === '.') || /[\0:\r\n]/.test(path))
+      fail('INVALID_PATH', 'Use a Vault-relative path with no parent traversal; hidden configuration paths are supported');
   }
   return operation;
 }
@@ -150,6 +171,19 @@ export async function validateCliPaths(target: CliTarget, operation: Spec, param
 }
 export function cliArgs(target: CliTarget, command: string, parameters: CliParameters): string[] {
   const operation = validateCliRequest(command, parameters);
+  if (command.startsWith('fs:') || command === 'config:dir') {
+    const code = fileOperationCode(command, command === 'fs:list' ? { path: '', ...parameters } : parameters);
+    const args = [`vault=${target.nativeVaultId}`, 'eval', `code=${code}`];
+    if (args.join(' ').length > 28_000) fail('INPUT_TOO_LARGE', 'Encoded file operation exceeds CLI transport; use fs:write then fs:append with smaller chunks');
+    return args;
+  }
+  if (command === 'eval') {
+    const payload = Buffer.from(String(parameters.code), 'utf8').toString('base64');
+    const code = `(0,eval)(new TextDecoder().decode(Uint8Array.from(atob('${payload}'),c=>c.charCodeAt(0))))`;
+    const args = [`vault=${target.nativeVaultId}`, 'eval', `code=${code}`];
+    if (args.join(' ').length > 28_000) fail('INPUT_TOO_LARGE', 'Encoded JavaScript exceeds CLI transport; split the operation');
+    return args;
+  }
   const args = [`vault=${target.nativeVaultId}`, command];
   for (const key of Object.keys(parameters).sort()) {
     const value = parameters[key];
