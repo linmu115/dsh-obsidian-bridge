@@ -1,4 +1,4 @@
-# 绑定 Vault 的 CLI 操作（0.4.1-rc2.9）
+# 绑定 Vault 的 CLI 操作（0.4.1-rc2.10）
 
 DSH Bridge 通过官方 Obsidian CLI 提供笔记、隐藏配置文件、插件生命周期和任意 JavaScript 操作。只使用 DSH 宿主的工具、可选 skills 与持久存储服务，不依赖 Core、Maintenance、Sticker 或 Codex Runtime。现有 Obsidian 侧桥负责绑定和 live 路径证明，无需为这次功能升级。
 

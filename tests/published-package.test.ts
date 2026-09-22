@@ -24,7 +24,7 @@ it("ships one Bridge node with standalone public runtime and type exports, witho
     }
     const manifest = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
     expect(manifest.name).toBe("dsh-obsidian-bridge");
-    expect(manifest.version).toBe("0.4.1-rc2.9");
+    expect(manifest.version).toBe("0.4.1-rc2.10");
     expect(manifest.peerDependenciesMeta["dsh-annotation-core"].optional).toBe(true);
     for (const name of retired) {
       expect(manifest.dependencies?.[name]).toBeUndefined();
