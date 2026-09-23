@@ -15,6 +15,30 @@ function fixture(){
  });
  return{created,factory,runtime:new VaultBridgeRuntime({identity,role:"controller",fallbackOrigin:"http://127.0.0.1:18473",createRuntime:factory})};
 }
+it('identity fences belong to their dependency scopes and recover only after every conflict leaves',async()=>{
+ const f=fixture();await f.runtime.reconcile([vault('a')]);const old=f.runtime.forVault('a');
+ const release=f.runtime.blockIdentity('wrong provider');const second=f.runtime.blockIdentity('another conflict');
+ await f.runtime.reconcile([vault('a')]);expect(()=>f.runtime.forVault('a')).toThrow('wrong provider');
+ release();release();expect(()=>f.runtime.forVault('a')).toThrow('another conflict');
+ second();await f.runtime.reconcile([vault('a')]);expect(f.factory).toHaveBeenCalledTimes(2);
+ expect(await f.runtime.forVault('a').knowledge('note-open',{})).toBe('a');await expect(old.knowledge('note-open',{})).rejects.toThrow('disposed');await f.runtime.dispose();
+});
+it('replacement and final unload await an old route that is already closing',async()=>{
+ const f=fixture();await f.runtime.reconcile([vault('a')]);
+ let finish!:()=>void;const closing=new Promise<void>(done=>{finish=done;});
+ f.created[0].dispose.mockImplementationOnce(()=>closing);
+ const first=f.runtime.reconcile([]);await vi.waitFor(()=>expect(f.created[0].dispose).toHaveBeenCalledOnce());
+ const replacement=f.runtime.reconcile([vault('a',2)]);let closed=false;const disposal=f.runtime.dispose().then(()=>{closed=true;});
+ await Promise.resolve();expect(closed).toBe(false);expect(f.factory).toHaveBeenCalledOnce();
+ finish();await Promise.all([first,replacement,disposal]);expect(f.factory).toHaveBeenCalledOnce();expect(()=>f.runtime.forVault('a')).toThrow('stopped');
+});
+it('a new route is not started before the previous route finishes disposal',async()=>{
+ const f=fixture();await f.runtime.reconcile([vault('a')]);let finish!:()=>void;
+ f.created[0].dispose.mockImplementationOnce(()=>new Promise<void>(done=>{finish=done;}));
+ const first=f.runtime.reconcile([vault('a',2)]);await vi.waitFor(()=>expect(f.created[0].dispose).toHaveBeenCalledOnce());
+ const second=f.runtime.reconcile([vault('a',3)]);await Promise.resolve();expect(f.factory).toHaveBeenCalledOnce();finish();
+ await Promise.all([first,second]);expect(f.factory).toHaveBeenCalledTimes(2);expect(f.created[1].options.bindingRevision).toBe(3);await f.runtime.dispose();
+});
 it("creates independent bound Vault routes, rejects ambiguous writes and does not pick latest online",async()=>{
  const f=fixture();await f.runtime.reconcile([vault("a"),vault("b")]);expect(f.factory).toHaveBeenCalledTimes(2);expect(()=>f.runtime.transport.knowledge("note-open",{})).toThrow("多个 Vault");expect(await f.runtime.forVault("a").knowledge("note-open",{})).toBe("a");expect(await f.runtime.forVault("b").knowledge("note-open",{})).toBe("b");
  await f.runtime.reconcile([vault("b"),vault("a")]);expect(f.factory).toHaveBeenCalledTimes(2);expect(()=>f.runtime.transport.knowledge("note-open",{})).toThrow("多个 Vault");await f.runtime.dispose();
@@ -50,4 +74,24 @@ it('folder binding pins publisher and boot across path proof and the final contr
  await expect(f.runtime.changeVaultBinding('a',request,{identity:selected,signal:new AbortController().signal})).rejects.toThrow('所选 Vault 在线身份已改变');
  const abort=new AbortController();abort.abort();probe.mockClear();
  await expect(f.runtime.changeVaultBinding('a',request,{identity:next,signal:abort.signal})).rejects.toThrow();expect(probe).not.toHaveBeenCalled();await f.runtime.dispose();
+});
+
+it.each(['conflict','dispose'] as const)('a %s during candidate probing prevents a later binding dispatch',async(reason)=>{
+ const f=fixture();const candidate=vault('a',0,'');await f.runtime.reconcile([candidate]);
+ let finish!:(value:VaultIdentity)=>void;const probe=vi.spyOn(f.runtime,'probe').mockReturnValue(new Promise(done=>{finish=done;}));
+ const request={operationId:'fixture-op',expectedRevision:0,intent:'bind' as const,target:{instanceId:identity.instanceId,profileId:identity.profileId},candidate:{origin:identity.origin,bootId:identity.bootId}};
+ const binding=f.runtime.changeVaultBinding('a',request);const rejected=expect(binding).rejects.toThrow();
+ await vi.waitFor(()=>expect(probe).toHaveBeenCalledOnce());
+ let disposal:Promise<void>|undefined;
+ if(reason==='conflict'){const release=f.runtime.blockIdentity('changed optional identity');release();}else disposal=f.runtime.dispose();
+ finish(candidate);await rejected;await(disposal??f.runtime.dispose());
+});
+
+it('a changed discovery candidate cannot be bound by a late probe of the previous candidate',async()=>{
+ const f=fixture();const candidate=vault('a',0,'');await f.runtime.reconcile([candidate]);
+ let finish!:(value:VaultIdentity)=>void;const probe=vi.spyOn(f.runtime,'probe').mockReturnValue(new Promise(done=>{finish=done;}));
+ const request={operationId:'fixture-op',expectedRevision:0,intent:'bind' as const,target:{instanceId:identity.instanceId,profileId:identity.profileId},candidate:{origin:identity.origin,bootId:identity.bootId}};
+ const binding=f.runtime.changeVaultBinding('a',request);const rejected=expect(binding).rejects.toThrow('candidate changed');
+ await vi.waitFor(()=>expect(probe).toHaveBeenCalledOnce());await f.runtime.reconcile([{...candidate,publisherId:crypto.randomUUID()}]);
+ finish(candidate);await rejected;await f.runtime.dispose();
 });

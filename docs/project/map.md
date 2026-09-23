@@ -1,3 +1,5 @@
+> 2026-09-23 生命周期修整：[[REQ-lifecycle-composition]]、[[IMP-lifecycle-composition]]、[[JOURNAL-lifecycle-composition-20260923]]。修整源码已验证，发行与安装状态以本轮交付回执为准；下文旧版本是历史记录。
+
 > 2026-09-22 独立构建与当前版本：[[IMP-portable-build-20260922]]；运行环境 **DSH 0.1.5-rc.2 / web profile**。
 
 > 当前 CLI 增强版本 **0.4.1-rc2.9**：[[REQ-cli-full-access]]、[[IMP-cli-full-access]]、[[VER-cli-full-access]]。隐藏配置文件、插件完整生命周期与任意 JavaScript 已纳入本轮；以下 .8 安装与业务验收均为历史时点。本版尚未部署到用户实例。

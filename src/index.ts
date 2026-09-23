@@ -88,22 +88,27 @@ export class BridgeLifecycleService extends TypertRemoteService implements Obsid
     this.discovery = startHostDiscovery(identity,this.runtime,{...(config.discoveryDirectory?{directory:config.discoveryDirectory}:{}),manualOrigin:config.bridgeOrigin,onError:error=>console.warn("[obsidian bridge] discovery unavailable",error)});
     ctx.inject(["maintenanceInstanceIdentity"],injected=>{
       const maintenance=injected.get("maintenanceInstanceIdentity") as {instanceId:string;profileId:string};
-      if(maintenance.instanceId!==identity.instanceId||maintenance.profileId!==identity.profileId)this.runtime.blockIdentity("Bridge and Maintenance instance identities conflict");
+      if(maintenance.instanceId!==identity.instanceId||maintenance.profileId!==identity.profileId){
+        injected.effect(()=>{
+          const release=this.runtime.blockIdentity("Bridge and Maintenance instance identities conflict");
+          return()=>{release();void this.discovery.refresh().catch(()=>undefined);};
+        },"obsidian bridge: scoped identity conflict");
+      }
     });
     ctx.inject(["maintenanceInstanceIdentity","maintenanceKnowledge"],injected=>{
       const maintenance=injected.get("maintenanceInstanceIdentity") as {instanceId:string;profileId:string};
       if(maintenance.instanceId!==identity.instanceId||maintenance.profileId!==identity.profileId)return;
       identity.capabilities=[...new Set([...identity.capabilities,"maintenance-knowledge-v1"])];
-      void this.discovery.refresh();
-      injected.effect(()=>()=>{identity.capabilities=identity.capabilities.filter(value=>value!=="maintenance-knowledge-v1");void this.discovery.refresh();},"obsidian bridge: optional maintenance knowledge");
+      void this.discovery.refresh().catch(()=>undefined);
+      injected.effect(()=>()=>{identity.capabilities=identity.capabilities.filter(value=>value!=="maintenance-knowledge-v1");void this.discovery.refresh().catch(()=>undefined);},"obsidian bridge: optional maintenance knowledge");
     });
     ctx.inject(["annotationCoreHost"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0], { profileId: this.runtimeIdentity.profileId }));
     ctx.inject(['tools'], async scope => {
       let active = true;
-      scope.effect(() => () => { active = false; }, 'obsidian bridge: CLI registration lifetime');
+      scope.effect(() => () => { active = false; this.cli = { available: false }; }, 'obsidian bridge: CLI registration lifetime');
       const { registerOperationTools } = await import('./operation-tools.ts');
       const executable = await resolveCliExecutable(config.obsidianCliPath).catch(() => undefined);
-      if (!active) return;
+      if (!active || scope.fiber.uid === null) return;
       this.cli = { available: executable !== undefined };
       if (executable === undefined) {
         registerOperationTools(scope, this);
@@ -156,7 +161,8 @@ export async function apply(injected: Context, config: Config): Promise<void> {
       storage:injected.get("storageDomain") as IdentityStorage,
       ...(injected.get("maintenanceInstanceIdentity")?{maintenance:injected.get("maintenanceInstanceIdentity") as {instanceId:string;profileId:string}}:{}),
       displayName:config.displayName||process.env.DSH_LAUNCHER_INSTANCE||"DSH"});
-    if(abort.signal.aborted){await identity.dispose();abort.signal.throwIfAborted();}
-    injected.effect(()=>identity.dispose,"obsidian bridge: identity domain");
+    if(abort.signal.aborted || injected.fiber.uid === null){await identity.dispose();return;}
+    try{injected.effect(()=>identity.dispose,"obsidian bridge: identity domain");}
+    catch(error){await identity.dispose();throw error;}
     new BridgeLifecycleService(injected, config, identity.identity);
 }

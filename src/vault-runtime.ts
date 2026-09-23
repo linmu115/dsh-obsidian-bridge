@@ -18,8 +18,19 @@ export class VaultBridgeRuntime implements ObsidianBridgeLifecycle {
  private routes=new Map<string,Route>(); private candidates=new Map<string,VaultIdentity>();
  private snapshots=new Map<string,VaultConnectionSnapshot>(); private listeners=new Set<()=>void>();
  private handlers=new Map<string,BridgeActionHandler>(); private mounts=new Map<string,BridgeAttachmentMount>(); private health=new Map<string,BridgeHealthSource>();
- private stopped=false; private generation=0; private identityConflict:string|undefined;
- blockIdentity(reason:string){this.identityConflict=reason;void this.reconcile([]);this.changed();}
+ private stopped=false; private generation=0;
+ private readonly identityBlocks=new Map<symbol,string>();
+ private reconcileQueue:Promise<void>=Promise.resolve();
+ private disposal:Promise<void>|undefined;
+ private readonly bindingRequests=new Map<AbortController,Promise<VaultBindingSnapshot>>();
+ private get identityConflict(){return this.identityBlocks.values().next().value;}
+ /** The conflict belongs to the observing dependency, never to a permanent latch. */
+ blockIdentity(reason:string):()=>void {
+  const token=Symbol();this.identityBlocks.set(token,reason);
+  for(const controller of this.bindingRequests.keys())controller.abort(new Error(reason));
+  void this.reconcile([]).catch(()=>undefined);this.changed();
+  return()=>{if(this.identityBlocks.delete(token)&&!this.stopped)this.changed();};
+ }
  readonly transport:BorrowedBridgeTransport;
  constructor(private options:VaultRuntimeOptions){
   this.runtimeIdentity={dshInstanceId:options.identity.instanceId,profileId:options.identity.profileId};
@@ -62,8 +73,14 @@ export class VaultBridgeRuntime implements ObsidianBridgeLifecycle {
  retry=(name?:string)=>{for(const route of this.routes.values())route.runtime.retry(name);if(name===undefined)for(const source of this.health.values())source.retry?.();else this.health.get(name)?.retry?.();};
  drain=async(reason:string,deadlineMs?:number)=>{await Promise.all([...this.routes.values()].map(route=>route.runtime.drain(reason,deadlineMs)));};
  resume=async()=>{await Promise.all([...this.routes.values()].map(route=>route.runtime.resume()));};
- async reconcile(input:readonly VaultIdentity[], conflicts:readonly string[]=[]):Promise<void>{
-  const generation=++this.generation;if(this.stopped)return;
+ reconcile(input:readonly VaultIdentity[], conflicts:readonly string[]=[]):Promise<void>{
+  if(this.stopped)return Promise.resolve();
+  const generation=++this.generation;
+  const work=this.reconcileQueue.then(()=>this.reconcileCurrent(input,conflicts,generation));
+  this.reconcileQueue=work.catch(()=>undefined);return work;
+ }
+ private async reconcileCurrent(input:readonly VaultIdentity[], conflicts:readonly string[],generation:number):Promise<void>{
+  if(this.stopped||generation!==this.generation)return;
   const found=new Map<string,VaultIdentity>();
   const duplicated=new Set(conflicts);
   for(const raw of this.identityConflict?[]:input){const identity=vaultIdentitySchema.parse(raw);if(found.has(identity.vaultId)&&found.get(identity.vaultId)?.publisherId!==identity.publisherId)duplicated.add(identity.vaultId);found.set(identity.vaultId,identity);}
@@ -92,18 +109,30 @@ export class VaultBridgeRuntime implements ObsidianBridgeLifecycle {
   this.changed();
  }
  private owned(identity:VaultIdentity){return identity.binding.target?.instanceId===this.options.identity.instanceId&&identity.binding.target.profileId===this.options.identity.profileId;}
- async changeVaultBinding(vaultId:string,input:ChangeVaultBindingRequest,guard?:{identity:VaultIdentity;signal:AbortSignal}):Promise<VaultBindingSnapshot>{
-  guard?.signal.throwIfAborted();
+ changeVaultBinding(vaultId:string,input:ChangeVaultBindingRequest,guard?:{identity:VaultIdentity;signal:AbortSignal}):Promise<VaultBindingSnapshot>{
+  if(this.stopped)return Promise.reject(new BridgeUnavailableError('Bridge runtime stopped'));
+  const controller=new AbortController();
+  const signal=guard?AbortSignal.any([controller.signal,guard.signal]):controller.signal;
+  const task=Promise.resolve().then(()=>this.changeBindingCurrent(vaultId,input,signal,guard?.identity)).finally(()=>{this.bindingRequests.delete(controller);});
+  this.bindingRequests.set(controller,task);return task;
+ }
+ private async changeBindingCurrent(vaultId:string,input:ChangeVaultBindingRequest,signal:AbortSignal,selected?:VaultIdentity):Promise<VaultBindingSnapshot>{
+  signal.throwIfAborted();
+  if(this.stopped)throw new BridgeUnavailableError('Bridge runtime stopped');
   if(this.identityConflict)throw new Error(this.identityConflict);
   const candidate=this.candidates.get(vaultId);if(!candidate)throw new Error("Vault discovery candidate unavailable");
   if(this.snapshots.get(vaultId)?.state==="conflict")throw new Error("Vault discovery identity conflict");
   const fresh=await this.probe(candidate.origin);if(fresh.vaultId!==vaultId||fresh.bootId!==candidate.bootId||fresh.publisherId!==candidate.publisherId)throw new Error("Vault candidate identity changed");
-  if(guard&&(fresh.bootId!==guard.identity.bootId||fresh.publisherId!==guard.identity.publisherId||fresh.origin!==guard.identity.origin))throw new Error("所选 Vault 在线身份已改变，请重新选择");
-  guard?.signal.throwIfAborted();
+  if(selected&&(fresh.bootId!==selected.bootId||fresh.publisherId!==selected.publisherId||fresh.origin!==selected.origin))throw new Error("所选 Vault 在线身份已改变，请重新选择");
+  signal.throwIfAborted();
+  if(this.identityConflict)throw new Error(this.identityConflict);
+  if(this.stopped)throw new BridgeUnavailableError('Bridge runtime stopped');
+  const current=this.candidates.get(vaultId);
+  if(!current||current.bootId!==candidate.bootId||current.publisherId!==candidate.publisherId||current.origin!==candidate.origin||current.binding.revision!==candidate.binding.revision||this.snapshots.get(vaultId)?.state==='conflict')throw new Error('Vault candidate changed during binding probe');
   const control=createBridgeControlClient({origin:fresh.origin,clientId:`dsh-binding:${this.options.identity.publisherId}`,role:"controller",dshInstanceId:this.options.identity.instanceId,profileId:this.options.identity.profileId,
    vaultId,bindingRevision:input.expectedRevision,dshBootId:this.options.identity.bootId,dshOrigin:this.options.identity.origin,...(this.options.fetch?{fetch:this.options.fetch}:{})});
-  const cancel=()=>control.cancelPending();guard?.signal.addEventListener('abort',cancel,{once:true});
-  try {guard?.signal.throwIfAborted();return await control.changeBinding(input);}finally{guard?.signal.removeEventListener('abort',cancel);await control.dispose();}
+  const cancel=()=>control.cancelPending();signal.addEventListener('abort',cancel,{once:true});
+  try {signal.throwIfAborted();const result=await control.changeBinding(input);signal.throwIfAborted();return result;}finally{signal.removeEventListener('abort',cancel);await control.dispose();}
  }
  guardHandoff(input:ReferenceHandoffInput):ReferenceHandoffInput {
   let pinned:Route|undefined;
@@ -124,5 +153,20 @@ export class VaultBridgeRuntime implements ObsidianBridgeLifecycle {
   if(identity.origin!==origin||!identity.capabilities.includes("vault-instance-binding-v1"))throw new Error("Vault endpoint identity or binding capability mismatch");return identity;
  }
 
- async dispose(){if(this.stopped)return;this.stopped=true;this.generation++;await Promise.all([...this.routes.values()].map(route=>route.runtime.dispose()));this.routes.clear();this.listeners.clear();this.handlers.clear();this.mounts.clear();this.health.clear();}
+ dispose():Promise<void>{
+  if(this.disposal)return this.disposal;
+  this.stopped=true;this.generation++;
+  for(const controller of this.bindingRequests.keys())controller.abort(new Error('Bridge runtime stopped'));
+  this.disposal=(async()=>{
+   await Promise.allSettled([...this.bindingRequests.values()]);
+   await this.reconcileQueue;
+   const routes=[...this.routes.values()];this.routes.clear();
+   const results=await Promise.allSettled(routes.map(async route=>{
+    try{for(const stop of route.disposeHooks)stop();}finally{await route.runtime.dispose();}
+   }));
+   this.listeners.clear();this.handlers.clear();this.mounts.clear();this.health.clear();this.identityBlocks.clear();
+   const failures=results.filter((result):result is PromiseRejectedResult=>result.status==='rejected');
+   if(failures.length)throw new AggregateError(failures.map(result=>result.reason),'Vault route cleanup failed');
+  })();return this.disposal;
+ }
 }

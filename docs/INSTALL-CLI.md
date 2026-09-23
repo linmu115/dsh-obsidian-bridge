@@ -1,6 +1,6 @@
 # 独立安装 CLI 权限增强
 
-版本：dsh-obsidian-bridge 0.4.1-rc2.10，适用 DSH 0.1.5-rc.2 / web、Node.js 24。
+版本：dsh-obsidian-bridge 0.4.1-rc2.11，适用 DSH 0.1.5-rc.2 / web、Node.js 24。
 
 仅升级 DSH 侧 Bridge；沿用已有 Obsidian 侧桥的绑定/身份接口。CLI 操作不需要 Annotation Core、Maintenance、Sticker、Codex 或 Launcher。完整引用业务才需要 Core。
 
@@ -10,7 +10,7 @@
 
 ```powershell
 $env:DSH_HOME = '<你的 DSH_HOME>'
-dsh plugin --profile web add ./dsh-obsidian-bridge-0.4.1-rc2.10.tgz
+dsh plugin --profile web add ./dsh-obsidian-bridge-0.4.1-rc2.11.tgz
 ```
 
 4. 通过原来的正式方式启动实例；不要重复手工注册 bundle。刷新相关页面。

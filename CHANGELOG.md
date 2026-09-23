@@ -1,3 +1,10 @@
+## 0.4.1-rc2.11 — 2026-09-23
+
+- Scope optional identity conflicts to their provider lifetime and preserve existing Bridge identity across provider replacement.
+- Serialize Vault route replacement and await retiring routes during final disposal.
+- Fence late client refresh/startup results and make remote cleanup idempotent. Core and Maintenance remain optional.
+- Runtime environment: DSH 0.1.5-rc.2 / web. See docs/RELEASE-20260923.md.
+
 ## 0.4.1-rc2.9 — 2026-09-22
 
 - Open privileged JavaScript eval and plugin install/uninstall/enable/disable through the bound official CLI. Treat all eval as a write for durable request receipts.

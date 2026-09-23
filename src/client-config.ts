@@ -4,7 +4,9 @@ import { LIFECYCLE_REMOTE } from "./typert.ts";
 import { normalizeBridgeOrigin } from "./control-client.ts";
 export async function mountBridgeConfig(ctx: { get(name: string): unknown }): Promise<BridgeConfiguration & { refresh():Promise<BridgeConfiguration>; changeBinding(vaultId:string,input:ChangeVaultBindingRequest):Promise<VaultBindingSnapshot>; dispose(): Promise<void> }> {
   const remote = ctx.get("remote") as { $mount(contribution: typeof LIFECYCLE_REMOTE): Promise<() => Promise<void>> };
-  const dispose = await remote.$mount(LIFECYCLE_REMOTE);
+  const unmount = await remote.$mount(LIFECYCLE_REMOTE);
+  let disposal: Promise<void> | undefined;
+  const dispose = () => disposal ??= Promise.resolve().then(unmount);
   try {
     const namespace = ctx.get("remote.obsidianBridgeLifecycle") as {
       getBridgeConfig(): Promise<{ ok: true; value: BridgeConfiguration } | { ok: false; error: { message: string } }>;

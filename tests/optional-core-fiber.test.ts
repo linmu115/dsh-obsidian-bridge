@@ -10,7 +10,7 @@ beforeEach(()=>vi.clearAllMocks());
 vi.mock("../src/vault-runtime.ts", () => ({ VaultBridgeRuntime: class {
  bridgeOrigin="http://127.0.0.1:18473"; capabilities=["reference-channel-v1","action-dispatch-v1"]; transport={};
  constructor(){runtime.start();}
- reconcile=vi.fn();listVaults=()=>[];identities=()=>[];dispose=runtime.dispose;registerActionHandler=runtime.register;
+ reconcile=vi.fn(async()=>{});listVaults=()=>[];identities=()=>[];dispose=runtime.dispose;registerActionHandler=runtime.register;
  getHealth(){return {state:"OFFLINE",components:{},bridgeOrigin:this.bridgeOrigin};}
 } }));
 it("keeps the Bridge host alive without Core or SM, and reattaches one source and handler per Core fiber",async()=>{

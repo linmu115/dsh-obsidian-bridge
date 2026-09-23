@@ -1,10 +1,10 @@
 {
   "snapshots": [
     {
-      "file": "dsh-annotation-core-0.3.12-rc2.28.tgz",
-      "version": "0.3.12-rc2.28",
-      "sha256": "cf44fa00c3f2c021d1473e0aba6ebda2c114a6b78eeeaa22c324106da65af103",
-      "source": "https://github.com/linmu115/dsh-annotation-core/releases/tag/v0.3.12-rc2.28"
+      "file": "dsh-annotation-core-0.3.12-rc2.29.tgz",
+      "version": "0.3.12-rc2.29",
+      "sha256": "3f7d65736183c21175f5e59555035edb426539dfedaed05a749a9c91a8473353",
+      "source": "https://github.com/linmu115/dsh-annotation-core/releases/tag/v0.3.12-rc2.29"
     }
   ]
 }

@@ -82,3 +82,15 @@ it('reports identity storage initialization failure through the host plugin acti
     await ctx.fiber.dispose();
   }
 });
+
+it('closes identity storage that finishes opening after the loading host was disposed',async()=>{
+ const ctx=new Context();const opened=deferred();const release=deferred();const close=vi.fn(async()=>{});
+ const dependencies=ctx.plugin({apply(scope){
+  scope.provide('webServer',{host:'127.0.0.1',port:51882,register:()=>vi.fn()});
+  scope.provide('connection',{authenticatedUrl:(origin:string)=>origin});
+  scope.provide('storageDomain',{async open(){opened.resolve();await release.promise;return{global:{get:()=>({instanceId:'fixture'})},close};}});
+ }});await dependencies.await();
+ const owner=ctx.plugin(bridge,{bridgeOrigin:'http://127.0.0.1:18473'});const activation=owner.await();
+ await opened.promise;const disposal=owner.dispose();release.resolve();
+ await Promise.all([activation,disposal]);expect(close).toHaveBeenCalledOnce();expect(ctx.get('obsidianBridgeLifecycle')).toBeUndefined();await ctx.fiber.dispose();
+});
