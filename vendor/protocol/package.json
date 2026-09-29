@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge-protocol",
-  "version": "0.4.0-rc2.1",
+  "version": "0.4.0-dsh02.1",
   "description": "Shared lifecycle protocol for the Obsidian DeepHarness Bridge and DSH adapters.",
   "type": "module",
   "license": "MIT",
@@ -40,7 +40,7 @@
     "check": "pnpm typecheck && pnpm test && pnpm pack --dry-run --json"
   },
   "dependencies": {
-    "zod": "4.4.3"
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",

@@ -52,7 +52,7 @@ it('keeps host activation pending until identity storage is ready, then activate
     expect(host.getBridgeConfig().referenceLocationResolverAvailable).toBe(false);
     const codec = LIFECYCLE_REMOTE_DESCRIPTORS[0]!.result;
     if (codec.mode !== 'strict') throw new Error('Expected a checked configuration contract');
-    expect(codec.schema.parse(host.getBridgeConfig())).toMatchObject({ referenceLocationResolverAvailable: false });
+    expect(codec.create().parse(host.getBridgeConfig())).toMatchObject({ referenceLocationResolverAvailable: false });
     const resolver = ctx.plugin({ apply(scope) { scope.provide('maintenanceReferenceResolver', {}); } });
     await resolver.await();
     expect(host.getBridgeConfig().referenceLocationResolverAvailable).toBe(true);
