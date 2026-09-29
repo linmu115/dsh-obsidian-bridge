@@ -43,7 +43,7 @@ class BridgeLifecycleClientService extends Service implements ObsidianBridgeLife
         await this.runtime.dispose();
       }
     },"obsidian bridge: surface routes and remote");
-    ctx.inject(["sessions", "annotationCore"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0]));
+    ctx.inject(["sessions", "uiWorkspace", "annotationCore"], injected => mountReferences(injected as Parameters<typeof mountReferences>[0]));
     ctx.inject(['slots' as never], scope => {
       scope.effect(() => registerBridgeSettings(scope.get('slots' as never) as unknown as BridgeSettingsSlots, this), 'obsidian bridge: settings');
     });

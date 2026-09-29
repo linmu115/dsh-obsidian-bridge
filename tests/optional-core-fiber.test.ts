@@ -33,7 +33,7 @@ it("keeps the Bridge host alive without Core or SM, and reattaches one source an
 
 it("keeps the surface alive without Core/SM and reattaches reference sources after Core reload",async()=>{
  runtime.register.mockImplementation(()=>runtime.remove);const ctx=new Context();
- const dependencies=ctx.plugin({apply(context){context.provide("sessions",{list:{getSnapshot:()=>({})},open:vi.fn()});}});await dependencies.await();
+ const dependencies=ctx.plugin({apply(context){context.provide("sessions",{list:{getSnapshot:()=>({byId:{}})}});context.provide("uiWorkspace",{openSession:vi.fn()});}});await dependencies.await();
  const owner=ctx.plugin({apply:applyClient});const unregister=vi.fn();const registerSourceAdapter=vi.fn(()=>unregister);
  const installCore=()=>ctx.plugin({apply(context){context.provide("annotationCore",{registerSourceAdapter});}});
  try {

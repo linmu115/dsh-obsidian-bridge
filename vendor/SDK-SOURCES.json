@@ -13,6 +13,14 @@
       "sha256": "e483552f8c9be46afd10d1d8572b5c8852bbe7365e5788a75e07040f1a54140a",
       "source": "local isolated DSH 0.2.0-rc.2 candidate",
       "sourceDirectory": "D:\\AI\\DeepSeekHarness-Plugin\\worktrees\\dsh02rc2-20260929\\dsh-annotation-core"
+    },
+    {
+      "name": "dsh-annotation-core",
+      "file": "dsh-annotation-core-0.3.12-dsh02.2.tgz",
+      "version": "0.3.12-dsh02.2",
+      "sha256": "a500453aeb66b1a9528f7a2ec33a09e9005e7a0ab3a8249f5728bcfa0df18917",
+      "source": "local isolated DSH 0.2.0-rc.2 candidate",
+      "sourceDirectory": "D:\\AI\\DeepSeekHarness-Plugin\\worktrees\\dsh02rc2-20260929\\dsh-annotation-core"
     }
   ]
 }

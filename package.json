@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge",
-  "version": "0.4.1-dsh02.1",
+  "version": "0.4.1-dsh02.2",
   "description": "Unified DSH Obsidian Bridge with explicit Vault binding, routed reference channels and optional independent consumers.",
   "type": "module",
   "license": "MIT",
@@ -72,8 +72,9 @@
     "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
     "@deepseek-ai/dsh-typert-protocol": "0.2.0-rc.2",
     "@deepseek-ai/schemastery": "*",
-    "dsh-annotation-core": "0.3.12-dsh02.1",
-    "react": "^18.2.0"
+    "dsh-annotation-core": "0.3.12-dsh02.2",
+    "react": "^18.2.0",
+    "@deepseek-ai/dsh-client-ui-workspace": "0.2.0-rc.2"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-tools": {
@@ -115,7 +116,7 @@
     "@deepseek-ai/schemastery": "3.18.2",
     "@types/node": "^24.3.0",
     "@types/react": "~18.3.1",
-    "dsh-annotation-core": "file:vendor/dsh-annotation-core-0.3.12-dsh02.1.tgz",
+    "dsh-annotation-core": "file:vendor/dsh-annotation-core-0.3.12-dsh02.2.tgz",
     "dsh-obsidian-bridge-protocol": "workspace:*",
     "react": "^18.2.0",
     "tsdown": "^0.22.14",
@@ -128,7 +129,10 @@
   },
   "dsh": {
     "client": {
-      "platform": "web"
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-workspace"
+      ]
     },
     "bundle": {
       "patch": "./cordis.patch.yml"

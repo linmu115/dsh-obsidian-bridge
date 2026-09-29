@@ -18,7 +18,8 @@ function page(embedded: boolean, resolverAvailable?: boolean) {
   const current: { sessionId?: string } = { sessionId: embedded ? "obsidian-session" : "desktop-session" };
   mocks.polling.mockReturnValue({ stop: vi.fn(), retry: vi.fn() });
   apply({
-    sessions: { list: { getSnapshot: () => ({ current: current.sessionId }) }, open: vi.fn() },
+    sessions: { list: { getSnapshot: () => ({ byId: current.sessionId ? { [current.sessionId]: { retainedBy: { mainView: 1 } } } : {} }), subscribe: () => () => {} } },
+    uiWorkspace: { openSession: vi.fn() },
     annotationCore: { registerSourceAdapter: () => vi.fn() },
     obsidianBridgeLifecycle: { runtimeIdentity: { dshInstanceId: "copy", profileId: "web" }, bridgeOrigin: "http://127.0.0.1:18473",
       ...(resolverAvailable === undefined ? {} : { hasReferenceLocationResolver: () => resolverAvailable }),

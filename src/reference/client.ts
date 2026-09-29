@@ -1,3 +1,4 @@
+import { currentMainSession, openMainSession, type MainSessionNavigation } from '../client-session.ts';
 import {assertMaintenanceSessionAvailable} from "../session-availability.ts";
 import { resolveMaintenanceLocation, type ReferenceLocation } from "./bridge/maintenance-location.ts";
 import type { Context as CordisContext } from "@deepseek-ai/cordis";
@@ -16,10 +17,8 @@ type SessionOpeningCore = AnnotationCoreClient & {
 type Context = CordisContext & {
   annotationCore: SessionOpeningCore;
   obsidianBridgeLifecycle: ObsidianBridgeLifecycle;
-  sessions: {
-    list: { getSnapshot(): { current?: string }; subscribe?(listener: () => void): () => void };
-    open(sessionId: string): void;
-  };
+  sessions: MainSessionNavigation['sessions'];
+  uiWorkspace: MainSessionNavigation['uiWorkspace'];
 };
 
 
@@ -76,7 +75,7 @@ export function apply(ctx: Context): void {
           // not mutate Core from a standalone page, including with old servers.
           if (surfaceId === undefined) return "ignored";
           if(route&&action.source.locator.vaultId!==route.vaultId)throw new Error("Reference capture Vault identity mismatch");
-          const sessionId = ctx.sessions.list.getSnapshot().current;
+          const sessionId = currentMainSession(ctx.sessions.list.getSnapshot());
           if (!sessionId) return "retry";
           if (action.dshInstanceId !== undefined && action.dshInstanceId !== instance) return "ignored";
           const target = await resolveLocation({ sessionId });
@@ -104,7 +103,7 @@ export function apply(ctx: Context): void {
           await assertMaintenanceSessionAvailable(resolved?.logicalSessionId??action.logicalSessionId);
           if (action.logicalSessionId && resolved === undefined) return "retry";
           const targetSessionId = resolved?.sessionId ?? action.sessionId;
-          await ctx.sessions.open(targetSessionId);
+          await openMainSession(ctx, targetSessionId, signal);
           if (typeof ctx.annotationCore.openAnnotationInSession === "function") {
             return await ctx.annotationCore.openAnnotationInSession(targetSessionId, action.setId, action.referenceId) ? "handled" : "retry";
           }
@@ -114,9 +113,9 @@ export function apply(ctx: Context): void {
         return "ignored";
       },
   });
-      let previousSession = ctx.sessions.list.getSnapshot().current;
+      let previousSession = currentMainSession(ctx.sessions.list.getSnapshot());
       const unsubscribe = ctx.sessions.list.subscribe?.(() => {
-        const current = ctx.sessions.list.getSnapshot().current;
+        const current = currentMainSession(ctx.sessions.list.getSnapshot());
         if (current && current !== previousSession) ctx.obsidianBridgeLifecycle.retryActions?.();
         previousSession = current;
       });
