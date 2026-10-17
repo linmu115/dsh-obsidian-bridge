@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge",
-  "version": "0.4.1-dsh02.2",
+  "version": "0.4.1-dsh021.1",
   "description": "Unified DSH Obsidian Bridge with explicit Vault binding, routed reference channels and optional independent consumers.",
   "type": "module",
   "license": "MIT",
@@ -53,7 +53,8 @@
     "docs"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "dsh": "0.2.1-rc.2"
   },
   "scripts": {
     "build": "tsdown --config-loader unrun --config tsdown.config.ts",
@@ -64,17 +65,18 @@
     "check": "pnpm build && pnpm typecheck && pnpm exec vitest run && pnpm pack --dry-run --json",
     "prebuild": "pnpm --filter dsh-obsidian-bridge-protocol build",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "package:release": "node scripts/package-release.mjs"
+    "package:release": "node scripts/package-release.mjs",
+    "prepare:host": "node scripts/prepare-host.mjs"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
-    "@deepseek-ai/dsh-skill": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-typert-protocol": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-skill": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.1-rc.2",
     "@deepseek-ai/schemastery": "*",
-    "dsh-annotation-core": "0.3.12-dsh02.2",
+    "dsh-annotation-core": "0.3.12-dsh021.1",
     "react": "^18.2.0",
-    "@deepseek-ai/dsh-client-ui-workspace": "0.2.0-rc.2"
+    "@deepseek-ai/dsh-client-ui-workspace": "0.2.1-rc.2"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-tools": {
@@ -100,32 +102,33 @@
     }
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "4.0.2",
-    "@deepseek-ai/dsh-agent": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-invariants": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-llm": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-scope": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-session": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-session-projection": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-skill": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-system-prompt": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-typert-protocol": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-typert-registry": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-user-approval": "0.2.0-rc.2",
-    "@deepseek-ai/schemastery": "3.18.2",
+    "@deepseek-ai/cordis": "link:.dsh-host/vendor/cordis",
+    "@deepseek-ai/dsh-agent": "link:.dsh-host/packages/core/agent",
+    "@deepseek-ai/dsh-llm": "link:.dsh-host/packages/llm/llm",
+    "@deepseek-ai/dsh-scope": "link:.dsh-host/packages/core/scope",
+    "@deepseek-ai/dsh-session": "link:.dsh-host/packages/core/session",
+    "@deepseek-ai/dsh-session-projection": "link:.dsh-host/packages/session/session-projection",
+    "@deepseek-ai/dsh-skill": "link:.dsh-host/packages/skill/skill",
+    "@deepseek-ai/dsh-system-prompt": "link:.dsh-host/packages/core/system-prompt",
+    "@deepseek-ai/dsh-tools": "link:.dsh-host/packages/core/tools",
+    "@deepseek-ai/dsh-typert-protocol": "link:.dsh-host/packages/typert/protocol",
+    "@deepseek-ai/dsh-typert-registry": "link:.dsh-host/packages/typert/registry",
+    "@deepseek-ai/dsh-user-approval": "link:.dsh-host/packages/interaction/user-approval",
+    "@deepseek-ai/schemastery": "link:.dsh-host/vendor/schemastery",
     "@types/node": "^24.3.0",
     "@types/react": "~18.3.1",
-    "dsh-annotation-core": "file:vendor/dsh-annotation-core-0.3.12-dsh02.2.tgz",
+    "dsh-annotation-core": "link:../dsh-annotation-core",
     "dsh-obsidian-bridge-protocol": "workspace:*",
     "react": "^18.2.0",
     "tsdown": "^0.22.14",
     "typescript": "^5.9.3",
     "unrun": "^0.3.1",
     "vitest": "^4.1.11",
-    "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-storage": "0.2.0-rc.2",
-    "tar": "7.5.22"
+    "@deepseek-ai/dsh-storage-domain": "link:.dsh-host/packages/storage/storage-domain",
+    "@deepseek-ai/dsh-storage": "link:.dsh-host/packages/storage/storage",
+    "tar": "7.5.22",
+    "@deepseek-ai/dsh-client-ui-workspace": "link:.dsh-host/packages/client/ui-workspace",
+    "@deepseek-ai/dsh-api-session-controller": "link:.dsh-host/packages/api/session-controller"
   },
   "dsh": {
     "client": {
@@ -150,6 +153,6 @@
     "url": "https://github.com/linmu115/dsh-obsidian-bridge.git"
   },
   "dependencies": {
-    "zod": "4.6.5"
+    "zod": "4.4.3"
   }
 }

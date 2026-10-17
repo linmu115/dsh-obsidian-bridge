@@ -4,3 +4,8 @@ node_modules/
 /dist/
 *.tgz
 coverage/
+
+# Local host checkout and verification artifacts
+/.dsh-host/
+/.artifacts/
+/*-dsh02-ui*.log
