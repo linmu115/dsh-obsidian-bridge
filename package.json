@@ -1,6 +1,6 @@
 {
   "name": "dsh-obsidian-bridge",
-  "version": "0.4.1-dsh021.1",
+  "version": "0.4.1-dsh021rc3.1",
   "description": "Unified DSH Obsidian Bridge with explicit Vault binding, routed reference channels and optional independent consumers.",
   "type": "module",
   "license": "MIT",
@@ -54,7 +54,7 @@
   ],
   "engines": {
     "node": ">=20",
-    "dsh": "0.2.1-rc.2"
+    "dsh": "0.2.1-rc.3"
   },
   "scripts": {
     "build": "tsdown --config-loader unrun --config tsdown.config.ts",
@@ -63,20 +63,20 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "pnpm build && pnpm typecheck && pnpm exec vitest run && pnpm pack --dry-run --json",
-    "prebuild": "pnpm --filter dsh-obsidian-bridge-protocol build",
+    "prebuild": "pnpm --filter dsh-obsidian-bridge-protocol build && node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "package:release": "node scripts/package-release.mjs",
     "prepare:host": "node scripts/prepare-host.mjs"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
-    "@deepseek-ai/dsh-skill": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-tools": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-typert-protocol": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-skill": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.1-rc.3",
     "@deepseek-ai/schemastery": "*",
-    "dsh-annotation-core": "0.3.12-dsh021.1",
+    "dsh-annotation-core": "0.3.12-dsh021rc3.1",
     "react": "^18.2.0",
-    "@deepseek-ai/dsh-client-ui-workspace": "0.2.1-rc.2"
+    "@deepseek-ai/dsh-client-ui-workspace": "0.2.1-rc.3"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-tools": {

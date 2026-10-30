@@ -1,3 +1,4 @@
+import { DSH_DESKTOP_ORIGIN } from "dsh-obsidian-bridge-protocol";
 import { vaultIdentitySchema, VAULT_IDENTITY_PATH, type DshInstanceIdentity, type VaultIdentity, type ChangeVaultBindingRequest, type VaultBindingSnapshot } from "dsh-obsidian-bridge-protocol/binding";
 import type { BridgeActionHandler, BridgeAttachmentMount, BridgeHealthSource, BridgeLifecycleHealth, BorrowedBridgeTransport, ObsidianBridgeLifecycle, VaultConnectionSnapshot, ReferenceHandoffInput } from "./api.ts";
 import { BridgeLifecycleRuntime, type LifecycleRuntimeOptions } from "./runtime.ts";
@@ -99,7 +100,7 @@ export class VaultBridgeRuntime implements ObsidianBridgeLifecycle {
    const runtime=(this.options.createRuntime??(options=>new BridgeLifecycleRuntime(options)))({bridgeOrigin:identity.origin,clientId:`dsh-${this.options.role}:${crypto.randomUUID()}`,
     role:this.options.role,dshInstanceId:this.options.identity.instanceId,profileId:this.options.identity.profileId,vaultId,bindingRevision:identity.binding.revision,dshBootId:this.options.identity.bootId,dshOrigin:this.options.identity.origin,
     ...(this.options.surfaceId?{surfaceId:this.options.surfaceId}:{}),...(this.options.requestOrigin?{requestOrigin:this.options.requestOrigin}:{}),
-    ...(this.options.fetch?{fetch:this.options.fetch}:{}),...(this.options.role==="controller"?{browserOrigins:[this.options.identity.origin],...(this.options.dshViewerUrl?{dshViewerUrl:this.options.dshViewerUrl}:{})}:{}),
+    ...(this.options.fetch?{fetch:this.options.fetch}:{}),...(this.options.role==="controller"?{browserOrigins:[this.options.identity.origin, DSH_DESKTOP_ORIGIN],...(this.options.dshViewerUrl?{dshViewerUrl:this.options.dshViewerUrl}:{})}:{}),
    });
    const route:Route={identity,runtime,disposeHooks:[],handlers:new Map(),mounts:new Map()};this.routes.set(vaultId,route);
    for(const [name,handler]of this.handlers)route.handlers.set(name,this.bindHandler(route,name,handler));

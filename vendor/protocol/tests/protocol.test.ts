@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   BRIDGE_LIFECYCLE_PROTOCOL_VERSION,
   acceptsBridgeWork,
+  bridgeBrowserOriginSchema,
   acquireBridgeLeaseRequestSchema,
   bridgeControlHandshakeRequestSchema,
   bridgeStatusSchema,
@@ -79,4 +80,10 @@ describe("Bridge lifecycle protocol", () => {
       reason: "profile shutdown",
     })).toThrow();
   });
+});
+
+it("allows only the exact official Desktop application origin", () => {
+  expect(bridgeBrowserOriginSchema.parse("dsh-app://app")).toBe("dsh-app://app");
+  for (const origin of ["null", "dsh-app://shell", "dsh-app://app/", "dsh-app://app.evil", "dsh-app://user@app", "file:///"])
+    expect(bridgeBrowserOriginSchema.safeParse(origin).success).toBe(false);
 });

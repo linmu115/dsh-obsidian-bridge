@@ -4,8 +4,12 @@ export * from './binding.ts';
 
 export const BRIDGE_LIFECYCLE_PROTOCOL_VERSION = 3 as const;
 
+export const DSH_DESKTOP_ORIGIN = "dsh-app://app" as const;
+
 export const bridgeBrowserOriginSchema = z.string().url().superRefine((value, context) => {
-  const url = new URL(value);
+  if (value === DSH_DESKTOP_ORIGIN) return;
+  let url: URL;
+  try { url = new URL(value); } catch { return; }
   if (url.protocol !== "http:" || (url.hostname !== "127.0.0.1" && url.hostname !== "localhost")) {
     context.addIssue({ code: "custom", message: "Browser origin must use loopback HTTP" });
   }
@@ -18,7 +22,8 @@ export type BridgeBrowserOrigin = z.infer<typeof bridgeBrowserOriginSchema>;
 export const bridgeBrowserOriginsSchema = z.array(bridgeBrowserOriginSchema).max(8);
 
 export const bridgeDshViewerUrlSchema = z.string().url().superRefine((value, context) => {
-  const url = new URL(value);
+  let url: URL;
+  try { url = new URL(value); } catch { return; }
   if (url.protocol !== "http:" || (url.hostname !== "127.0.0.1" && url.hostname !== "localhost")) {
     context.addIssue({ code: "custom", message: "DSH Viewer URL must use loopback HTTP" });
   }

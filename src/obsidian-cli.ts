@@ -93,6 +93,13 @@ export async function resolveCliExecutable(configured = ''): Promise<string> {
   for (const dir of (process.env.PATH ?? '').split(delimiter).filter(isAbsolute)) {
     for (const name of names) { const path = join(dir, name); if ((await stat(path).catch(() => undefined))?.isFile()) return realpath(path); }
   }
+  // Finder-launched applications do not inherit shell PATH customizations.
+  if (process.platform === 'darwin') {
+    for (const directory of ['/Applications', join(homedir(), 'Applications')]) {
+      const path = join(directory, 'Obsidian.app', 'Contents', 'MacOS', 'Obsidian');
+      if ((await stat(path).catch(() => undefined))?.isFile()) return realpath(path);
+    }
+  }
   return fail('CLI_UNAVAILABLE', 'Official Obsidian CLI is unavailable; install a supported Obsidian installer, enable CLI, or configure obsidianCliPath');
 }
 

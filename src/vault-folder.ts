@@ -20,6 +20,35 @@ try {
 } finally { $dialog.Dispose() }
 `;
 export type VaultFolderPicker = (signal: AbortSignal) => Promise<string | null>;
+// JXA serializes the selected path as data, including quotes and newlines.
+export const MAC_FOLDER_PICKER_SCRIPT = `
+const app = Application.currentApplication();
+app.includeStandardAdditions = true;
+try {
+  JSON.stringify({ path: app.chooseFolder({ withPrompt: '选择已安装 Obsidian Bridge 的 Vault 文件夹' }).toString() });
+} catch (error) {
+  if (error.errorNumber === -128) JSON.stringify({ path: null });
+  else throw error;
+}
+`;
+export function createVaultFolderPicker(options: { platform?: string; timeoutMs?: number; execute?: typeof execFile } = {}): VaultFolderPicker {
+  const platform = options.platform ?? process.platform;
+  if (platform === 'win32') return createWindowsVaultFolderPicker(options);
+  return async signal => {
+    signal.throwIfAborted();
+    if (platform !== 'darwin') throw new Error('选择文件夹功能需要 Windows 或 macOS 本机桌面');
+    const deadline = AbortSignal.any([signal, AbortSignal.timeout(options.timeoutMs ?? 60_000)]);
+    const output = await new Promise<string>((resolve, reject) => {
+      (options.execute ?? execFile)('/usr/bin/osascript', ['-l', 'JavaScript', '-e', MAC_FOLDER_PICKER_SCRIPT],
+        { encoding: 'utf8', maxBuffer: 32_768, signal: deadline }, (error, stdout) => {
+          if (error) reject(new Error(deadline.aborted ? '选择文件夹已取消或超时，请重新操作' : '无法打开 macOS 文件夹选择框'));
+          else resolve(String(stdout));
+        });
+    });
+    deadline.throwIfAborted();
+    return z.object({ path: z.string().min(1).max(32_768).nullable() }).strict().parse(JSON.parse(output.trim())).path;
+  };
+}
 export function createWindowsVaultFolderPicker(options: { platform?: string; timeoutMs?: number; execute?: typeof execFile } = {}): VaultFolderPicker {
   return async signal => {
     signal.throwIfAborted();
@@ -79,7 +108,7 @@ export function createVaultFolderBinding(options: FolderBindingOptions) {
     if (busy) throw new Error('已有文件夹选择正在进行，请先完成或取消');
     busy = true;
     try {
-      const selected = await (options.picker ?? createWindowsVaultFolderPicker())(signal);
+      const selected = await (options.picker ?? createVaultFolderPicker())(signal);
       signal.throwIfAborted();
       if (selected === null) return { message: '已取消选择，绑定未改变' };
       const folder = await inspectVaultFolder(selected);

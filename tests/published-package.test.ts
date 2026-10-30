@@ -24,7 +24,7 @@ it("ships one Bridge node with standalone public runtime and type exports, witho
     }
     const manifest = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
     expect(manifest.name).toBe("dsh-obsidian-bridge");
-    expect(manifest.version).toBe("0.4.1-dsh021.1");
+    expect(manifest.version).toBe("0.4.1-dsh021rc3.1");
     expect(manifest.peerDependenciesMeta["dsh-annotation-core"].optional).toBe(true);
     for (const name of retired) {
       expect(manifest.dependencies?.[name]).toBeUndefined();
@@ -57,7 +57,7 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 const require = createRequire(import.meta.url);
-for (const name of ${JSON.stringify([...retired, "dsh-annotation-core", "dsh-session-sticker-board", "dsh-session-maintenance"])}) assert.throws(() => require.resolve(name));
+for (const name of ${JSON.stringify([...retired, "dsh-annotation-core", "dsh-session-sticker-board", "dsh-session-maintenance"])}) assert.throws(() => require.resolve(name), 'Unexpected dependency resolved: ' + name);
 const host = await import('dsh-obsidian-bridge');
 assert.equal(host.name, 'dsh-obsidian-bridge');
 for (const path of ['api', 'transport', 'typert', 'protocol', 'protocol/data', 'protocol/binding']) assert.ok(Object.keys(await import('dsh-obsidian-bridge/' + path)).length);
@@ -68,7 +68,7 @@ vm.runInNewContext(readFileSync(require.resolve('dsh-obsidian-bridge/client'), '
 assert.equal(loaded.id, 'dsh-obsidian-bridge');
 assert.equal(typeof loaded.factory(require).apply, 'function');
 `);
-    execFileSync(process.execPath, [join(fixture, "smoke.mjs")], { cwd: fixture, encoding: "utf8" });
+    execFileSync(process.execPath, [join(fixture, "smoke.mjs")], { cwd: fixture, encoding: "utf8", env: { ...process.env, NODE_PATH: '' } });
     await writeFile(join(fixture, "consumer.ts"), `
 import type { ObsidianBridgeLifecycle, ReferenceHandoffInput } from 'dsh-obsidian-bridge/api';
 import type { BridgeHttpClient } from 'dsh-obsidian-bridge/transport';
@@ -78,7 +78,7 @@ import type { BridgeStatus } from 'dsh-obsidian-bridge/protocol';
 import type { BridgeLifecycleService } from 'dsh-obsidian-bridge';
 export type Consumer = [ObsidianBridgeLifecycle, ReferenceHandoffInput, BridgeHttpClient, StickerRecord, VaultIdentity, BridgeStatus, BridgeLifecycleService];
 `);
-    execFileSync(process.execPath, [join(root, "node_modules/typescript/bin/tsc"), "--noEmit", "--strict", "--skipLibCheck", "--moduleResolution", "Bundler", "--module", "ESNext", "--target", "ES2023", "consumer.ts"], { cwd: fixture, encoding: "utf8" });
+    execFileSync(process.execPath, [join(root, "node_modules/typescript/bin/tsc"), "--noEmit", "--strict", "--skipLibCheck", "--moduleResolution", "Bundler", "--module", "ESNext", "--target", "ES2023", "consumer.ts"], { cwd: fixture, encoding: "utf8", env: { ...process.env, NODE_PATH: '' } });
   } finally {
     // Only the exact temporary fixture allocated above can be removed.
     if (dirname(fixture) === resolve(tmpdir()) && fixture.startsWith(join(resolve(tmpdir()), "dsh-bridge-package-"))) await rm(fixture, { recursive: true, force: true });

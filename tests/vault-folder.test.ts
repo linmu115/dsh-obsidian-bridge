@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { execFile } from 'node:child_process';
 import type { DshInstanceIdentity, VaultIdentity } from 'dsh-obsidian-bridge-protocol/binding';
-import { createVaultFolderBinding, createWindowsVaultFolderPicker, FOLDER_PICKER_SCRIPT, inspectVaultFolder } from '../src/vault-folder.ts';
+import { createVaultFolderBinding, createVaultFolderPicker, createWindowsVaultFolderPicker, FOLDER_PICKER_SCRIPT, MAC_FOLDER_PICKER_SCRIPT, inspectVaultFolder } from '../src/vault-folder.ts';
 import type { VaultConnectionSnapshot } from '../src/api.ts';
 
 const roots: string[] = [];
@@ -29,6 +29,23 @@ async function fixture() {
   return { root, plugin, options, bind, picker, refreshVaults, fetchProof, proof, run: createVaultFolderBinding(options), setState(value: typeof state) { state = value; }, setOnline(value: Partial<VaultIdentity>) { online = { ...online, ...value }; }, get online() { return online; } };
 }
 const signal = () => new AbortController().signal;
+
+it('macOS picker preserves literal paths through JSON and never interpolates them into a script', async () => {
+  const selected = '/Users/test/Vault 中文/$(literal);"quotes"\nline';
+  const execute = vi.fn((_file, _args, _options, callback) => callback(null, JSON.stringify({ path: selected }))) as unknown as typeof execFile;
+  expect(await createVaultFolderPicker({ platform: 'darwin', execute })(signal())).toBe(selected);
+  expect(execute).toHaveBeenCalledWith('/usr/bin/osascript', ['-l', 'JavaScript', '-e', MAC_FOLDER_PICKER_SCRIPT], expect.objectContaining({ maxBuffer: 32_768, signal: expect.any(AbortSignal) }), expect.any(Function));
+  expect(MAC_FOLDER_PICKER_SCRIPT).not.toContain(selected);
+});
+it('macOS picker handles cancel, malformed output and cancellation before launch', async () => {
+  const execute = vi.fn((_file, _args, _options, callback) => callback(null, '{"path":null}')) as unknown as typeof execFile;
+  expect(await createVaultFolderPicker({ platform: 'darwin', execute })(signal())).toBeNull();
+  const aborted = AbortSignal.abort();
+  await expect(createVaultFolderPicker({ platform: 'darwin', execute })(aborted)).rejects.toThrow();
+  expect(execute).toHaveBeenCalledTimes(1);
+  const malformed = vi.fn((_file, _args, _options, callback) => callback(null, '/not-json')) as unknown as typeof execFile;
+  await expect(createVaultFolderPicker({ platform: 'darwin', execute: malformed })(signal())).rejects.toThrow();
+});
 
 it('validates only selected root, proves live location and uses existing bind CAS without changing plugin data', async () => {
   const f = await fixture(); const before = await readFile(join(f.plugin, 'data.json'));
